@@ -2,5 +2,6 @@ streamlit
 pymongo==4.7.2
 dnspython
 groq
+pdfplumber
+python-docx
 python-dotenv
-pandas
