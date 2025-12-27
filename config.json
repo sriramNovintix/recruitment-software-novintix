@@ -1,0 +1,5 @@
+{
+  "GROQ_API_KEY": "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",
+  "MONGODB_URI": "mongodb+srv://srirampractice_db_user:XeNXvqRyesHBvEge@cluster-aihr.qbbzict.mongodb.net/AI-HR?retryWrites=true&w=majority",
+  "DB_NAME": "AI-HR"
+}
