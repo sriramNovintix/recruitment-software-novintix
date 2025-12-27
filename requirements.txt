@@ -1,0 +1,7 @@
+streamlit
+pymongo
+groq
+pdfplumber
+python-docx
+python-dotenv
+bson
