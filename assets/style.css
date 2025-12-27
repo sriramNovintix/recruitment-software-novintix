@@ -132,19 +132,20 @@
 }
 
 [data-testid="stFileUploader"] section > div:first-child svg {
-    fill: white !important;
+    fill: #1e293b !important;
     width: 48px !important;
     height: 48px !important;
 }
 
 [data-testid="stFileUploader"] section > div:first-child p {
-    color: white !important;
-    font-weight: 600 !important;
+    color: #1e293b !important;
+    font-weight: 700 !important;
     font-size: 1.1rem !important;
 }
 
 [data-testid="stFileUploader"] section > div:first-child small {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
     font-size: 0.9rem !important;
 }
 
@@ -552,7 +553,7 @@
 
 h1, h2, h3, h4 {
     font-weight: 700;
-    color: #1e293b;
+    color: #1e293b !important;
 }
 
 h1 { font-size: 2.5rem; }
@@ -571,8 +572,25 @@ p {
 }
 
 strong {
-    color: #1e293b;
+    color: #1e293b !important;
     font-weight: 700;
+}
+
+/* Force all markdown text to be dark */
+[data-testid="stMarkdownContainer"] h1,
+[data-testid="stMarkdownContainer"] h2,
+[data-testid="stMarkdownContainer"] h3,
+[data-testid="stMarkdownContainer"] h4,
+[data-testid="stMarkdownContainer"] h5,
+[data-testid="stMarkdownContainer"] h6 {
+    color: #1e293b !important;
+}
+
+/* Fix any remaining white text */
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] span,
+[data-testid="stMarkdownContainer"] div {
+    color: #334155 !important;
 }
 
 /* ===================================================== 
