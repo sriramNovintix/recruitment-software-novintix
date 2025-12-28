@@ -4,6 +4,7 @@ from typing import Dict, Any
 
 from core.llm_client import call_llm
 from core.rubric import RUBRIC_CATEGORIES, get_rubric_text
+from core.embedding_signals import compute_embedding_signals
 
 
 LLM_OUTPUT_SCHEMA = {
@@ -115,35 +116,38 @@ def assign_candidate_tier(final_score: float) -> str:
 
 # -------------------- PROMPT --------------------
 
-def _build_prompt(parsed_jd: Dict[str, Any], parsed_resume: Dict[str, Any]) -> str:
+def _build_prompt(
+    parsed_jd: Dict[str, Any],
+    parsed_resume: Dict[str, Any],
+    embedding_signals: Dict[str, float]
+) -> str:
+
     return f"""
 {get_rubric_text()}
 
+YOU ARE A SENIOR TECHNICAL HIRING EVALUATOR.
+
 SCORING INTELLIGENCE RULES (MANDATORY):
 
-1. Perform SEMANTIC matching, not keyword matching
-   - Example: "MongoDB" ≈ "MongoDB Compass"
-   - Example: "Python" ≈ "Python frameworks"
-
-2. WEIGHT USAGE OVER MENTION
-   - Skill/tool used in projects or experience = higher score
-   - Mentioned only in skills list = lower score
-
-3. LOCATION LOGIC (Professional Presence)
-   - If JD location exists AND resume location matches → positive signal
-   - If JD location exists AND resume location missing → neutral
-   - If JD location is null → ignore location completely
-
-4. DO NOT penalize missing optional fields
-5. Do NOT infer experience or skills
-6. Compare JD and Resume contextually, not literally
+1. SEMANTIC MATCHING (not keyword)
+2. USAGE > MENTION
+3. EMBEDDING SIGNALS ARE EVIDENCE
+   - High similarity WITHOUT resume evidence → do NOT over-score
+   - Low similarity WITH strong resume evidence → explain mismatch
+4. Location logic strictly enforced
+5. No inference
+6. No hallucination
 7. Do NOT compute final score
 
+EMBEDDING SIMILARITY SIGNALS (0–100):
+{json.dumps(embedding_signals, indent=2)}
+
 STRICT OUTPUT RULES:
-- Output MUST be valid JSON
-- Follow EXACT schema
-- Scores must be 0–100
-- Explanations must justify semantic reasoning
+- Output ONLY valid JSON
+- Follow schema EXACTLY
+- Justify scores using BOTH:
+    - resume evidence
+    - embedding signals
 
 REQUIRED JSON SCHEMA:
 {json.dumps(LLM_OUTPUT_SCHEMA, indent=2)}
@@ -163,16 +167,17 @@ Return ONLY valid JSON.
 def score_resume(parsed_jd: Dict[str, Any], parsed_resume: Dict[str, Any]) -> Dict[str, Any]:
     masked_resume = mask_resume_pii(parsed_resume)
 
-    prompt = _build_prompt(parsed_jd, masked_resume)
+    embedding_signals = compute_embedding_signals(parsed_jd, masked_resume)
+
+    prompt = _build_prompt(parsed_jd, masked_resume, embedding_signals)
     response = call_llm(prompt)
 
     try:
         llm_scores = _safe_json_load(response)
         _validate_llm_scores(llm_scores)
     except Exception:
-        retry_prompt = prompt + "\nERROR: Fix JSON. Return ONLY JSON."
-        retry_response = call_llm(retry_prompt)
-        llm_scores = _safe_json_load(retry_response)
+        retry_prompt = prompt + "\nERROR: Fix JSON strictly. Return ONLY JSON."
+        llm_scores = _safe_json_load(call_llm(retry_prompt))
         _validate_llm_scores(llm_scores)
 
     final_score = _compute_final_score(llm_scores)
@@ -181,6 +186,7 @@ def score_resume(parsed_jd: Dict[str, Any], parsed_resume: Dict[str, Any]) -> Di
     return {
         "final_score": final_score,
         "candidate_tier": candidate_tier,
+        "embedding_signals": embedding_signals,
         "category_scores": {
             cat: llm_scores[cat]["score"] for cat in RUBRIC_CATEGORIES
         },
