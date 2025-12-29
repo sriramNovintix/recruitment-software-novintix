@@ -519,13 +519,13 @@ elif page == "Results":
                     
                     for cat, score in ev["category_scores"].items():
                         # Score color based on value
-                        if score >= 8:
+                        if score >= 80:
                             score_color = "#10b981"
                             score_icon = "🟢"
-                        elif score >= 6:
+                        elif score >= 60:
                             score_color = "#3b82f6"
                             score_icon = "🔵"
-                        elif score >= 4:
+                        elif score >= 40:
                             score_color = "#f59e0b"
                             score_icon = "🟡"
                         else:
