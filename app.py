@@ -8,6 +8,7 @@ from core.db import (
     get_unreviewed_resumes_by_jd, get_evaluations_by_jd_and_tier,
     mark_resume_reviewed
 )
+from core.duplicate_guard import register_file_or_skip
 from core.utils import extract_text
 from core.jd_parser import parse_jd
 from core.resume_parser import parse_resume
@@ -149,17 +150,22 @@ if page == "Upload JD":
             with col_b:
                 if st.button("🚀 Parse & Save JD", type="primary", use_container_width=True):
                     with st.spinner("🔄 Processing job description..."):
-                        raw_text = extract_text(jd_file)
-                        parsed_jd = parse_jd(raw_text)
-                        jd_id = str(uuid.uuid4())
-                        save_jd({
-                            "jd_id": jd_id,
-                            "role": parsed_jd.get("role", "Unknown"),
-                            "parsed_jd_json": parsed_jd,
-                            "created_at": datetime.utcnow()
-                        })
-                        st.success("✅ Job description saved successfully!")
-                        st.toast("✅ JD saved successfully!", icon="✅")
+                        is_new, _ = register_file_or_skip(jd_file, file_type="jd")
+                        if not is_new:
+                            st.toast("⚠️ JD already uploaded earlier", icon="⚠️")
+                        else:
+                            raw_text = extract_text(jd_file)
+                            parsed_jd = parse_jd(raw_text)
+                            jd_id = str(uuid.uuid4())
+
+                            save_jd({
+                                "jd_id": jd_id,
+                                "role": parsed_jd.get("role", "Unknown"),
+                                "parsed_jd_json": parsed_jd,
+                                "created_at": datetime.utcnow()
+                            })
+
+                            st.success("✅ Job description saved successfully!")
 
 # ===================================================== 
 # LAYER 2 — RESUME UPLOAD (JD-SCOPED)
@@ -262,12 +268,28 @@ elif page == "Upload Resume":
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     
+                    skipped_files = []
+                    saved_count = 0
+
                     for idx, file in enumerate(resume_files):
                         status_text.markdown(f"**Processing:** `{file.name}`")
+
+                        is_new, skipped_name = register_file_or_skip(
+                            file,
+                            file_type="resume",
+                            jd_id=selected_jd_id
+                        )
+
+                        if not is_new:
+                            skipped_files.append(skipped_name)
+                            continue
+
                         raw_text = extract_text(file)
                         parsed_resume = parse_resume(raw_text)
+
                         resume_id = str(uuid.uuid4())
                         candidate_name = parsed_resume.get("candidate_name", "Unknown")
+
                         save_resume({
                             "resume_id": resume_id,
                             "candidate_name": candidate_name,
@@ -275,12 +297,24 @@ elif page == "Upload Resume":
                             "parsed_resume_json": parsed_resume,
                             "created_at": datetime.utcnow()
                         })
+
+                        saved_count += 1
                         progress_bar.progress((idx + 1) / len(resume_files))
-                    
+
                     status_text.empty()
                     progress_bar.empty()
-                    st.success(f"✅ Successfully saved {len(resume_files)} resume(s)!")
-                    st.toast(f"✅ {len(resume_files)} resume(s) saved successfully!", icon="✅")
+
+                    # ---------------- MESSAGES ----------------
+                    if saved_count:
+                        st.success(f"✅ Successfully saved {saved_count} resume(s)!")
+                        st.toast(f"✅ {saved_count} resume(s) saved successfully!", icon="✅")
+
+                    if skipped_files:
+                        st.warning(
+                            "⚠️ Skipped (already uploaded for this JD): "
+                            + ", ".join(skipped_files)
+                        )
+
 
 # ===================================================== 
 # LAYER 3 — RESULTS & SCORING
