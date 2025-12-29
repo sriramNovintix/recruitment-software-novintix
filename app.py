@@ -8,6 +8,7 @@ from core.db import (
     get_unreviewed_resumes_by_jd, get_evaluations_by_jd_and_tier,
     mark_resume_reviewed
 )
+from core.duplicate_guard import register_file_or_skip
 from core.utils import extract_text
 from core.jd_parser import parse_jd
 from core.resume_parser import parse_resume
@@ -112,15 +113,12 @@ if page == "Upload JD":
             unsafe_allow_html=True
         )
         
-        # Upload Section
+        # Upload Section - Updated heading style
         st.markdown(
             """
-            <div style='background: white; padding: 2rem; border-radius: 15px; 
-                        box-shadow: 0 5px 20px rgba(0,0,0,0.08); margin-bottom: 1.5rem;'>
-                <h3 style='color: #333; margin: 0 0 1rem 0; font-size: 1.3rem;'>
-                    📄 Select Job Description File
-                </h3>
-            </div>
+            <h3 style='color: #1e293b; margin: 2rem 0 1.5rem 0; font-size: 1.4rem; font-weight: 700;'>
+                📄 Select Job Description File
+            </h3>
             """,
             unsafe_allow_html=True
         )
@@ -129,7 +127,8 @@ if page == "Upload JD":
             "Upload JD file",
             type=["pdf", "docx", "txt"],
             key="jd_uploader",
-            help="Supported formats: PDF, DOCX, TXT"
+            help="Supported formats: PDF, DOCX, TXT",
+            label_visibility="collapsed"
         )
         
         if jd_file:
@@ -149,17 +148,22 @@ if page == "Upload JD":
             with col_b:
                 if st.button("🚀 Parse & Save JD", type="primary", use_container_width=True):
                     with st.spinner("🔄 Processing job description..."):
-                        raw_text = extract_text(jd_file)
-                        parsed_jd = parse_jd(raw_text)
-                        jd_id = str(uuid.uuid4())
-                        save_jd({
-                            "jd_id": jd_id,
-                            "role": parsed_jd.get("role", "Unknown"),
-                            "parsed_jd_json": parsed_jd,
-                            "created_at": datetime.utcnow()
-                        })
-                        st.success("✅ Job description saved successfully!")
-                        st.toast("✅ JD saved successfully!", icon="✅")
+                        is_new, _ = register_file_or_skip(jd_file, file_type="jd")
+                        if not is_new:
+                            st.toast("⚠️ JD already uploaded earlier", icon="⚠️")
+                        else:
+                            raw_text = extract_text(jd_file)
+                            parsed_jd = parse_jd(raw_text)
+                            jd_id = str(uuid.uuid4())
+
+                            save_jd({
+                                "jd_id": jd_id,
+                                "role": parsed_jd.get("role", "Unknown"),
+                                "parsed_jd_json": parsed_jd,
+                                "created_at": datetime.utcnow()
+                            })
+
+                            st.success("✅ Job description saved successfully!")
 
 # ===================================================== 
 # LAYER 2 — RESUME UPLOAD (JD-SCOPED)
@@ -199,36 +203,36 @@ elif page == "Upload Resume":
             unsafe_allow_html=True
         )
         
-        # JD Selection
+        # JD Selection - Updated heading style
         st.markdown(
             """
-            <div style='background: white; padding: 1.5rem; border-radius: 15px; 
-                        box-shadow: 0 5px 20px rgba(0,0,0,0.08); margin-bottom: 1.5rem;'>
-                <h3 style='color: #333; margin: 0 0 1rem 0; font-size: 1.2rem;'>
-                    🎯 Select Target Job Description
-                </h3>
+            <h3 style='color: #1e293b; margin: 2rem 0 1.5rem 0; font-size: 1.4rem; font-weight: 700;'>
+                🎯 Select Target Job Description <span style='color: #dc2626; font-size: 1.2rem;'>*</span>
+            </h3>
             """,
             unsafe_allow_html=True
         )
         
         jd_map = {jd["jd_id"]: jd["role"] for jd in jds}
-        selected_jd_id = st.selectbox(
+        jd_options = ["-- Select a Job Description --"] + list(jd_map.keys())
+        
+        selected_jd_display = st.selectbox(
             "Select JD for resume upload",
-            options=list(jd_map.keys()),
-            format_func=lambda x: f"📋 {jd_map[x]}",
-            key="jd_selector"
+            options=jd_options,
+            format_func=lambda x: x if x == "-- Select a Job Description --" else f"📋 {jd_map[x]}",
+            key="jd_selector",
+            label_visibility="collapsed"
         )
         
-        st.markdown("</div>", unsafe_allow_html=True)
+        # Check if JD is selected
+        selected_jd_id = None if selected_jd_display == "-- Select a Job Description --" else selected_jd_display
         
-        # Resume Upload
+        # Resume Upload - Updated heading style
         st.markdown(
             """
-            <div style='background: white; padding: 1.5rem; border-radius: 15px; 
-                        box-shadow: 0 5px 20px rgba(0,0,0,0.08); margin-bottom: 1.5rem;'>
-                <h3 style='color: #333; margin: 0 0 1rem 0; font-size: 1.2rem;'>
-                    📎 Upload Resume Files
-                </h3>
+            <h3 style='color: #1e293b; margin: 2rem 0 1.5rem 0; font-size: 1.4rem; font-weight: 700;'>
+                📎 Upload Resume Files
+            </h3>
             """,
             unsafe_allow_html=True
         )
@@ -238,10 +242,9 @@ elif page == "Upload Resume":
             type=["pdf", "docx", "txt"],
             accept_multiple_files=True,
             key="resume_uploader",
-            help="Select one or more resume files (Max 200MB per file)"
+            help="Select one or more resume files (Max 200MB per file)",
+            label_visibility="collapsed"
         )
-        
-        st.markdown("</div>", unsafe_allow_html=True)
         
         if resume_files:
             st.markdown(
@@ -259,28 +262,61 @@ elif page == "Upload Resume":
             col_a, col_b, col_c = st.columns([1, 2, 1])
             with col_b:
                 if st.button("🚀 Parse & Save All Resumes", type="primary", use_container_width=True):
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
-                    for idx, file in enumerate(resume_files):
-                        status_text.markdown(f"**Processing:** `{file.name}`")
-                        raw_text = extract_text(file)
-                        parsed_resume = parse_resume(raw_text)
-                        resume_id = str(uuid.uuid4())
-                        candidate_name = parsed_resume.get("candidate_name", "Unknown")
-                        save_resume({
-                            "resume_id": resume_id,
-                            "candidate_name": candidate_name,
-                            "jd_id": selected_jd_id,
-                            "parsed_resume_json": parsed_resume,
-                            "created_at": datetime.utcnow()
-                        })
-                        progress_bar.progress((idx + 1) / len(resume_files))
-                    
-                    status_text.empty()
-                    progress_bar.empty()
-                    st.success(f"✅ Successfully saved {len(resume_files)} resume(s)!")
-                    st.toast(f"✅ {len(resume_files)} resume(s) saved successfully!", icon="✅")
+                    # Validation: Check if JD is selected
+                    if not selected_jd_id:
+                        st.error("⚠️ Please select a Job Description before uploading resumes!")
+                        st.toast("⚠️ Job Description selection is mandatory!", icon="⚠️")
+                    else:
+                        progress_bar = st.progress(0)
+                        status_text = st.empty()
+                        
+                        skipped_files = []
+                        saved_count = 0
+
+                        for idx, file in enumerate(resume_files):
+                            status_text.markdown(f"**Processing:** `{file.name}`")
+
+                            is_new, skipped_name = register_file_or_skip(
+                                file,
+                                file_type="resume",
+                                jd_id=selected_jd_id
+                            )
+
+                            if not is_new:
+                                skipped_files.append(skipped_name)
+                                continue
+
+                            raw_text = extract_text(file)
+                            parsed_resume = parse_resume(raw_text)
+
+                            resume_id = str(uuid.uuid4())
+                            candidate_name = parsed_resume.get("candidate_name", "Unknown")
+
+                            save_resume({
+                                "resume_id": resume_id,
+                                "candidate_name": candidate_name,
+                                "jd_id": selected_jd_id,
+                                "parsed_resume_json": parsed_resume,
+                                "created_at": datetime.utcnow()
+                            })
+
+                            saved_count += 1
+                            progress_bar.progress((idx + 1) / len(resume_files))
+
+                        status_text.empty()
+                        progress_bar.empty()
+
+                        # ---------------- MESSAGES ----------------
+                        if saved_count:
+                            st.success(f"✅ Successfully saved {saved_count} resume(s)!")
+                            st.toast(f"✅ {saved_count} resume(s) saved successfully!", icon="✅")
+
+                        if skipped_files:
+                            st.warning(
+                                "⚠️ Skipped (already uploaded for this JD): "
+                                + ", ".join(skipped_files)
+                            )
+
 
 # ===================================================== 
 # LAYER 3 — RESULTS & SCORING
@@ -324,27 +360,32 @@ elif page == "Results":
     with col1:
         st.markdown(
             """
-            <div style='background: white; padding: 1.5rem; border-radius: 15px; 
-                        box-shadow: 0 5px 20px rgba(0,0,0,0.08); margin-bottom: 1.5rem;'>
-                <h3 style='color: #333; margin: 0 0 1rem 0; font-size: 1.2rem;'>🎯 Select Job Description</h3>
+            <h3 style='color: #1e293b; margin: 2rem 0 1.5rem 0; font-size: 1.4rem; font-weight: 700;'>
+                🎯 Select Job Description <span style='color: #dc2626; font-size: 1.2rem;'>*</span>
+            </h3>
             """,
             unsafe_allow_html=True
         )
         jd_map = {jd["jd_id"]: jd["role"] for jd in jds}
-        selected_jd_id = st.selectbox(
+        jd_options = ["-- Select a Job Description --"] + list(jd_map.keys())
+        
+        selected_jd_display = st.selectbox(
             "Select JD for evaluation",
-            options=list(jd_map.keys()),
-            format_func=lambda x: f"📋 {jd_map[x]}",
-            key="results_jd_selector"
+            options=jd_options,
+            format_func=lambda x: x if x == "-- Select a Job Description --" else f"📋 {jd_map[x]}",
+            key="results_jd_selector",
+            label_visibility="collapsed"
         )
-        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Check if JD is selected
+        selected_jd_id = None if selected_jd_display == "-- Select a Job Description --" else selected_jd_display
     
     with col2:
         st.markdown(
             """
-            <div style='background: white; padding: 1.5rem; border-radius: 15px; 
-                        box-shadow: 0 5px 20px rgba(0,0,0,0.08); margin-bottom: 1.5rem;'>
-                <h3 style='color: #333; margin: 0 0 1rem 0; font-size: 1.2rem;'>🔢 Number of Candidates</h3>
+            <h3 style='color: #1e293b; margin: 2rem 0 1.5rem 0; font-size: 1.4rem; font-weight: 700;'>
+                🔢 Number of Candidates
+            </h3>
             """,
             unsafe_allow_html=True
         )
@@ -353,162 +394,180 @@ elif page == "Results":
             min_value=1,
             max_value=50,
             value=5,
-            key="top_n_input"
+            key="top_n_input",
+            label_visibility="collapsed"
         )
-        st.markdown("</div>", unsafe_allow_html=True)
     
     # Run Evaluation Button
     col_a, col_b, col_c = st.columns([1, 2, 1])
     with col_b:
         if st.button("▶️ Run AI Evaluation", type="primary", use_container_width=True, 
                      help="Click to evaluate all unreviewed resumes"):
-            jd = next(jd for jd in jds if jd["jd_id"] == selected_jd_id)
-            resumes = get_unreviewed_resumes_by_jd(selected_jd_id)
-            
-            if not resumes:
-                st.toast("ℹ️ No unreviewed resumes for this JD.", icon="ℹ️")
+            # Validation: Check if JD is selected
+            if not selected_jd_id:
+                st.error("⚠️ Please select a Job Description before running evaluation!")
+                st.toast("⚠️ Job Description selection is mandatory!", icon="⚠️")
             else:
-                progress_bar = st.progress(0)
-                status_text = st.empty()
+                jd = next(jd for jd in jds if jd["jd_id"] == selected_jd_id)
+                resumes = get_unreviewed_resumes_by_jd(selected_jd_id)
                 
-                for idx, resume in enumerate(resumes):
-                    status_text.markdown(f"**Evaluating:** `{resume['candidate_name']}`")
-                    result = score_resume(
-                        jd["parsed_jd_json"],
-                        resume["parsed_resume_json"]
-                    )
-                    save_evaluation({
-                        "jd_id": selected_jd_id,
-                        "resume_id": str(resume["_id"]),
-                        "candidate_name": resume["candidate_name"],
-                        "category_scores": result["category_scores"],
-                        "category_explanations": result["category_explanations"],
-                        "overall_score": result["final_score"],
-                        "candidate_tier": assign_candidate_tier(result["final_score"]),
-                        "evaluated_at": datetime.utcnow()
-                    })
-                    mark_resume_reviewed(resume["_id"])
-                    progress_bar.progress((idx + 1) / len(resumes))
-                
-                status_text.empty()
-                progress_bar.empty()
-                st.success("✅ Evaluation completed successfully!")
-                st.toast("✅ Evaluation completed!", icon="🎯")
+                if not resumes:
+                    st.toast("ℹ️ No unreviewed resumes for this JD.", icon="ℹ️")
+                else:
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    for idx, resume in enumerate(resumes):
+                        status_text.markdown(f"**Evaluating:** `{resume['candidate_name']}`")
+                        result = score_resume(
+                            jd["parsed_jd_json"],
+                            resume["parsed_resume_json"]
+                        )
+                        save_evaluation({
+                            "jd_id": selected_jd_id,
+                            "resume_id": str(resume["_id"]),
+                            "candidate_name": resume["candidate_name"],
+                            "category_scores": result["category_scores"],
+                            "category_explanations": result["category_explanations"],
+                            "overall_score": result["final_score"],
+                            "candidate_tier": assign_candidate_tier(result["final_score"]),
+                            "evaluated_at": datetime.utcnow()
+                        })
+                        mark_resume_reviewed(resume["_id"])
+                        progress_bar.progress((idx + 1) / len(resumes))
+                    
+                    status_text.empty()
+                    progress_bar.empty()
+                    st.success("✅ Evaluation completed successfully!")
+                    st.toast("✅ Evaluation completed!", icon="🎯")
     
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Results Section
-    st.markdown("### 🏆 Ranked Candidates")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        tier_filter = st.selectbox(
-            "Filter candidates by tier",
-            ["ALL", "TOP", "BEST", "MODERATE", "LOW", "VERY_LOW"],
-            format_func=lambda x: f"🎯 {x}",
-            key="tier_filter"
+    # Results Section - Only show if JD is selected
+    if selected_jd_id:
+        st.markdown("### 🏆 Ranked Candidates")
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            tier_filter = st.selectbox(
+                "Filter candidates by tier",
+                ["ALL", "TOP", "BEST", "MODERATE", "LOW", "VERY_LOW"],
+                format_func=lambda x: f"🎯 {x}",
+                key="tier_filter"
+            )
+        
+        evaluations = get_evaluations_by_jd_and_tier(
+            selected_jd_id, tier_filter, limit=top_n
         )
-    
-    evaluations = get_evaluations_by_jd_and_tier(
-        selected_jd_id, tier_filter, limit=top_n
-    )
-    
-    if evaluations:
-        for idx, ev in enumerate(evaluations, 1):
-            # Tier color coding
-            tier_colors = {
-                "TOP": "#10b981",
-                "BEST": "#3b82f6",
-                "MODERATE": "#f59e0b",
-                "LOW": "#ef4444",
-                "VERY_LOW": "#991b1b"
-            }
-            tier_color = tier_colors.get(ev['candidate_tier'], "#6b7280")
-            
-            # Expander for detailed breakdown - starts collapsed
-            with st.expander(f"**#{idx}** {ev['candidate_name']}", expanded=False):
-                # Score and tier info
-                col_score, col_tier = st.columns(2)
+        
+        if evaluations:
+            for idx, ev in enumerate(evaluations, 1):
+                # Tier color coding
+                tier_colors = {
+                    "TOP": "#10b981",
+                    "BEST": "#3b82f6",
+                    "MODERATE": "#f59e0b",
+                    "LOW": "#ef4444",
+                    "VERY_LOW": "#991b1b"
+                }
+                tier_color = tier_colors.get(ev['candidate_tier'], "#6b7280")
                 
-                with col_score:
-                    st.markdown(
-                        f"""
-                        <div style='text-align: center; padding: 1.5rem; background: {tier_color}; 
-                                    color: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);'>
-                            <div style='font-size: 2.5rem; font-weight: 800; margin-bottom: 0.3rem;'>
-                                {ev['overall_score']:.1f}
-                            </div>
-                            <div style='font-size: 0.9rem; opacity: 0.95; font-weight: 600;'>
-                                OVERALL SCORE
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                
-                with col_tier:
-                    st.markdown(
-                        f"""
-                        <div style='text-align: center; padding: 1.5rem; background: {tier_color}; 
-                                    color: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);'>
-                            <div style='font-size: 1.8rem; font-weight: 800; margin-bottom: 0.3rem;'>
-                                {ev['candidate_tier']}
-                            </div>
-                            <div style='font-size: 0.9rem; opacity: 0.95; font-weight: 600;'>
-                                CANDIDATE TIER
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-                
-                # Category Scores
-                st.markdown("### 📊 Category Analysis")
-                
-                for cat, score in ev["category_scores"].items():
-                    # Score color based on value
-                    if score >= 8:
-                        score_color = "#10b981"
-                        score_icon = "🟢"
-                    elif score >= 6:
-                        score_color = "#3b82f6"
-                        score_icon = "🔵"
-                    elif score >= 4:
-                        score_color = "#f59e0b"
-                        score_icon = "🟡"
-                    else:
-                        score_color = "#ef4444"
-                        score_icon = "🔴"
+                # Expander for detailed breakdown - starts collapsed
+                with st.expander(f"**#{idx}** {ev['candidate_name']}", expanded=False):
+                    # Score and tier info
+                    col_score, col_tier = st.columns(2)
                     
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.markdown(f"**{score_icon} {cat}**")
-                        st.caption(ev["category_explanations"][cat])
-                    with col2:
+                    with col_score:
                         st.markdown(
                             f"""
-                            <div style='text-align: center; padding: 0.8rem; background: {score_color}; 
-                                        color: white; border-radius: 10px; font-size: 1.5rem; 
-                                        font-weight: 800; box-shadow: 0 2px 8px rgba(0,0,0,0.1);'>
-                                {score:.1f}
+                            <div style='text-align: center; padding: 1.5rem; background: {tier_color}; 
+                                        color: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);'>
+                                <div style='font-size: 2.5rem; font-weight: 800; margin-bottom: 0.3rem;'>
+                                    {ev['overall_score']:.1f}
+                                </div>
+                                <div style='font-size: 0.9rem; opacity: 0.95; font-weight: 600;'>
+                                    OVERALL SCORE
+                                </div>
                             </div>
                             """,
                             unsafe_allow_html=True
                         )
-                    st.markdown("---")
+                    
+                    with col_tier:
+                        st.markdown(
+                            f"""
+                            <div style='text-align: center; padding: 1.5rem; background: {tier_color}; 
+                                        color: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);'>
+                                <div style='font-size: 1.8rem; font-weight: 800; margin-bottom: 0.3rem;'>
+                                    {ev['candidate_tier']}
+                                </div>
+                                <div style='font-size: 0.9rem; opacity: 0.95; font-weight: 600;'>
+                                    CANDIDATE TIER
+                                </div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # Category Scores
+                    st.markdown("### 📊 Category Analysis")
+                    
+                    for cat, score in ev["category_scores"].items():
+                        # Score color based on value
+                        if score >= 80:
+                            score_color = "#10b981"
+                            score_icon = "🟢"
+                        elif score >= 60:
+                            score_color = "#3b82f6"
+                            score_icon = "🔵"
+                        elif score >= 40:
+                            score_color = "#f59e0b"
+                            score_icon = "🟡"
+                        else:
+                            score_color = "#ef4444"
+                            score_icon = "🔴"
+                        
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.markdown(f"**{score_icon} {cat}**")
+                            st.caption(ev["category_explanations"][cat])
+                        with col2:
+                            st.markdown(
+                                f"""
+                                <div style='text-align: center; padding: 0.8rem; background: {score_color}; 
+                                            color: white; border-radius: 10px; font-size: 1.5rem; 
+                                            font-weight: 800; box-shadow: 0 2px 8px rgba(0,0,0,0.1);'>
+                                    {score:.1f}
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                        st.markdown("---")
+        else:
+            st.markdown(
+                """
+                <div style='text-align: center; padding: 2rem; background: #e3f2fd; 
+                            border-radius: 15px; border: 2px dashed #2196f3;'>
+                    <div style='font-size: 3rem; margin-bottom: 1rem;'>📭</div>
+                    <h3 style='color: #1565c0; margin: 0;'>No Evaluations Found</h3>
+                    <p style='color: #1976d2; margin-top: 0.5rem;'>Try adjusting your filter or run an evaluation first</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
     else:
         st.markdown(
             """
-            <div style='text-align: center; padding: 2rem; background: #e3f2fd; 
-                        border-radius: 15px; border: 2px dashed #2196f3;'>
-                <div style='font-size: 3rem; margin-bottom: 1rem;'>📭</div>
-                <h3 style='color: #1565c0; margin: 0;'>No Evaluations Found</h3>
-                <p style='color: #1976d2; margin-top: 0.5rem;'>Try adjusting your filter or run an evaluation first</p>
+            <div style='text-align: center; padding: 3rem; background: #fff3cd; 
+                        border-radius: 15px; border: 2px solid #ffc107; margin-top: 2rem;'>
+                <div style='font-size: 4rem; margin-bottom: 1rem;'>👆</div>
+                <h3 style='color: #856404; margin: 0;'>Select a Job Description</h3>
+                <p style='color: #856404; margin-top: 0.5rem;'>Please select a JD from the dropdown above to view results</p>
             </div>
             """,
             unsafe_allow_html=True

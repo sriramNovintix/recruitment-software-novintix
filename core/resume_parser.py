@@ -7,13 +7,13 @@ from core.llm_client import call_llm
 RESUME_SCHEMA = {
     "candidate_name": "string or null",
     "total_experience_years": "number or null",
+    "location": "string or null",
     "titles_with_dates": [
         {
             "title": "string",
             "organization": "string",
             "start_date": "string or null",
-            "end_date": "string or null",
-            "location": "string or null"
+            "end_date": "string or null"
         }
     ],
     "career_progression": [
