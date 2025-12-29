@@ -287,7 +287,7 @@
 }
 
 /* ===================================================== 
-   SELECTBOX
+   SELECTBOX - IMPROVED STYLING WITH REQUIRED INDICATOR
    ===================================================== */
 
 .stSelectbox > div > div {
@@ -318,6 +318,12 @@
 .stSelectbox [data-baseweb="select"] > div {
     color: #334155;
     font-weight: 500;
+}
+
+/* Style for placeholder option */
+.stSelectbox [data-baseweb="select"] > div[aria-selected="true"] {
+    color: #94a3b8;
+    font-style: italic;
 }
 
 /* ===================================================== 
@@ -523,6 +529,14 @@
     background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
     border-left-color: #ffc107 !important;
     color: #856404;
+}
+
+/* Error */
+[data-testid="stException"],
+.stAlert[data-baseweb="notification"][kind="error"] {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-left-color: #dc2626 !important;
+    color: #991b1b;
 }
 
 /* Info */
