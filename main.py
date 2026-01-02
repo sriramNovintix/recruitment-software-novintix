@@ -26,6 +26,12 @@ def load_landing_css():
         footer {visibility: hidden;}
         header {visibility: hidden;}
         
+        /* Remove default Streamlit padding/margin */
+        .block-container {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+        
         /* Reset and base styles */
         .stApp {
             background: #ffffff;
@@ -73,6 +79,7 @@ def load_landing_css():
             font-weight: 500;
             font-size: 0.95rem;
             transition: color 0.2s;
+            cursor: pointer;
         }
         
         .nav-link:hover {
@@ -86,29 +93,27 @@ def load_landing_css():
             justify-self: end;
         }
         
-        /* Remove fixed positioning for top buttons - they're now at bottom */
-        
         /* Hero Section */
         .hero-section {
             text-align: center;
-            padding: 8rem 2rem 4rem;
+            padding: 4rem 2rem 2rem;
             background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%);
             margin-top: 70px;
         }
         
         .hero-title {
-            font-size: 3.5rem;
+            font-size: 2.8rem;
             font-weight: 800;
             color: #1a1a1a;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             line-height: 1.2;
         }
         
         .hero-subtitle {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             color: #666;
             max-width: 600px;
-            margin: 0 auto 2.5rem;
+            margin: 0 auto 1.5rem;
             line-height: 1.6;
         }
         
@@ -116,7 +121,7 @@ def load_landing_css():
             display: flex;
             gap: 1rem;
             justify-content: center;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
         
         .btn-primary {
@@ -163,8 +168,8 @@ def load_landing_css():
         .stats-section {
             display: flex;
             justify-content: center;
-            gap: 6rem;
-            padding: 3rem 2rem;
+            gap: 4rem;
+            padding: 2rem 2rem;
             border-top: 1px solid #eee;
             border-bottom: 1px solid #eee;
         }
@@ -174,28 +179,28 @@ def load_landing_css():
         }
         
         .stat-value {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
             color: #3b82f6;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
         }
         
         .stat-label {
             color: #888;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
         
         /* How It Works Section */
         .hiw-section {
-            padding: 5rem 2rem;
+            padding: 3rem 2rem;
             text-align: center;
         }
         
         .hiw-title {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 700;
             color: #1a1a1a;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
         
         .hiw-grid {
@@ -302,6 +307,21 @@ def load_landing_css():
             background-color: #ffffff !important;
             color: #1a1a1a !important;
             caret-color: #3b82f6 !important;
+        }
+        
+        /* Disabled input text color fix */
+        .stTextInput > div > div > input:disabled {
+            background-color: #f5f5f5 !important;
+            color: #1a1a1a !important;
+            -webkit-text-fill-color: #1a1a1a !important;
+            opacity: 1 !important;
+            cursor: not-allowed !important;
+        }
+        
+        /* Force black text in disabled inputs */
+        input[disabled] {
+            color: #1a1a1a !important;
+            -webkit-text-fill-color: #1a1a1a !important;
         }
         
         .stTextInput > div > div > input::placeholder {
@@ -440,8 +460,8 @@ def show_landing_page():
     <div class="navbar">
         <div class="nav-brand">TalentMatch</div>
         <div class="nav-links">
-            <a href="#features" class="nav-link">Features</a>
-            <a href="#how-it-works" class="nav-link">How It Works</a>
+            <span class="nav-link">Features</span>
+            <span class="nav-link">How It Works</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -501,24 +521,24 @@ def show_landing_page():
     """, unsafe_allow_html=True)
     
     # Call to Action Buttons Section - Below How It Works
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
     col1, col2, col3, col4, col5 = st.columns([2, 1.5, 0.5, 1.5, 2])
     
     with col2:
         if st.button("🔐 Sign In", key="bottom_signin", use_container_width=True, type="secondary"):
             st.session_state.page = "signin"
-            st.rerun()
+            
     
     with col4:
         if st.button("🚀 Get Started Free", key="bottom_getstarted", use_container_width=True, type="primary"):
             st.session_state.page = "signup"
-            st.rerun()
+            
     
     # Footer
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='text-align: center; padding: 3rem 2rem; background: #f8f9fa; margin-top: 4rem; border-top: 1px solid #eee;'>
+    <div style='text-align: center; padding: 2rem 2rem; background: #f8f9fa; margin-top: 2rem; border-top: 1px solid #eee;'>
         <p style='color: #888; font-size: 0.9rem; margin: 0;'>
             © 2024 TalentMatch. All rights reserved.
         </p>
@@ -712,27 +732,40 @@ def show_auth_page():
         
         # ============ LOGIN FORM ============
         if st.session_state.auth_tab == "login":
-            with st.form("login_form", clear_on_submit=False):
-                st.markdown('<p style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.3rem;">Email Address</p>', unsafe_allow_html=True)
-                email = st.text_input("email_login", placeholder="you@example.com", label_visibility="collapsed")
+            # Initialize session state for login fields
+            if "login_email" not in st.session_state:
+                st.session_state.login_email = ""
+            if "login_password" not in st.session_state:
+                st.session_state.login_password = ""
+            
+            st.markdown('<p style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.3rem;">Email Address</p>', unsafe_allow_html=True)
+            email = st.text_input("email_login", placeholder="you@example.com", label_visibility="collapsed", key="login_email_input", value=st.session_state.login_email)
+            
+            st.markdown('<p style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.3rem; margin-top: 0.8rem;">Password</p>', unsafe_allow_html=True)
+            password = st.text_input("password_login", type="password", placeholder="••••••••", label_visibility="collapsed", key="login_password_input", value=st.session_state.login_password)
+            
+            st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+            
+            if st.button("Sign in", use_container_width=True, type="primary", key="login_submit_btn"):
+                # Update session state
+                st.session_state.login_email = email
+                st.session_state.login_password = password
                 
-                st.markdown('<p style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.3rem; margin-top: 0.8rem;">Password</p>', unsafe_allow_html=True)
-                password = st.text_input("password_login", type="password", placeholder="••••••••", label_visibility="collapsed")
-                
-                submitted = st.form_submit_button("Sign in", use_container_width=True)
-                
-                if submitted:
-                    if not email or not password:
-                        st.error("Please fill in all fields")
+                if not email or not password:
+                    st.error("Please fill in all fields")
+                else:
+                    result = authenticate_user(email, password)
+                    if result["success"]:
+                        st.session_state.authenticated = True
+                        st.session_state.user = result["user"]
+                        st.session_state.page = "app"
+                        # Clear login fields
+                        st.session_state.login_email = ""
+                        st.session_state.login_password = ""
+                        st.success("Login successful!")
+                        
                     else:
-                        result = authenticate_user(email, password)
-                        if result["success"]:
-                            st.session_state.authenticated = True
-                            st.session_state.user = result["user"]
-                            st.session_state.page = "app"
-                            st.success("Login successful!")
-                        else:
-                            st.error(result["message"])
+                        st.error(result["message"])
         
         # ============ SIGNUP FORM ============
         else:
@@ -744,8 +777,8 @@ def show_auth_page():
                 email = st.text_input("email_signup", placeholder="you@example.com", label_visibility="collapsed")
                 
                 st.markdown('<p style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.3rem; margin-top: 0.8rem;">Organization</p>', unsafe_allow_html=True)
-                # Regular text input with Novintix pre-filled
-                organization = st.text_input("org_signup", value="Novintix", label_visibility="collapsed")
+                # Disabled text input with Novintix pre-filled
+                organization = st.text_input("org_signup", value="Novintix", label_visibility="collapsed", disabled=True)
                 
                 st.markdown('<p style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.3rem; margin-top: 0.8rem;">Password</p>', unsafe_allow_html=True)
                 password = st.text_input("password_signup", type="password", placeholder="••••••••", label_visibility="collapsed")
@@ -814,6 +847,21 @@ def show_main_app():
         section[data-testid="stSidebar"] {
             background-color: #f8f9fa;
         }
+        
+        /* Disabled input text color fix for main app */
+        .stTextInput > div > div > input:disabled {
+            background-color: #f5f5f5 !important;
+            color: #1a1a1a !important;
+            -webkit-text-fill-color: #1a1a1a !important;
+            opacity: 1 !important;
+            cursor: not-allowed !important;
+        }
+        
+        /* Force black text in disabled inputs */
+        input[disabled] {
+            color: #1a1a1a !important;
+            -webkit-text-fill-color: #1a1a1a !important;
+        }
     </style>
     """, unsafe_allow_html=True)
     
@@ -851,8 +899,10 @@ def show_main_app():
         page = st.radio(
             "Choose a page",
             ["📊 Dashboard", "➕ Create Job"],
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="main_nav_radio"
         )
+            
         
         st.markdown("---")
         
@@ -880,18 +930,15 @@ def show_main_app():
     # ---------------- HEADER ----------------
     st.markdown(
         f"""
-        <div style='text-align: center; padding: 2rem 0 3rem 0; margin-bottom: 2rem;'>
-            <h1 style='font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem; 
+        <div style='text-align: center; padding: 1rem 0 1.5rem 0; margin-bottom: 1rem;'>
+            <h1 style='font-size: 2.2rem; font-weight: 800; margin-bottom: 0.3rem; 
                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        background-clip: text;'>
                 Resume Evaluation System
             </h1>
-            <p style='font-size: 1.2rem; color: #666; margin: 0; font-weight: 500;'>
-                🤖 AI-Powered Candidate Assessment & Intelligent Ranking
-            </p>
-            <p style='font-size: 0.9rem; color: #888; margin-top: 0.5rem;'>
-                Organization: <strong>{user['organization']}</strong>
+            <p style='font-size: 1rem; color: #666; margin: 0; font-weight: 500;'>
+                🤖 AI-Powered Candidate Assessment
             </p>
         </div>
         """,
@@ -907,7 +954,7 @@ def show_main_app():
     # ===================================================== 
     # DASHBOARD — LANDING PAGE WITH JOB CARDS
     # ===================================================== 
-    if page == "Dashboard" and not st.session_state.selected_job_id:
+    if page == "Dashboard" and (not "selected_job_id" in st.session_state or not st.session_state.selected_job_id):
         # Get dashboard statistics
         try:
             jds_list = get_jds(org_id=org_id)
@@ -931,11 +978,11 @@ def show_main_app():
             st.markdown(
                 f"""
                 <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                            padding: 2rem; border-radius: 15px; text-align: center; 
-                            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);'>
-                    <div style='color: white; font-size: 0.9rem; font-weight: 600; 
-                                opacity: 0.9; margin-bottom: 0.5rem;'>📄 Active Jobs</div>
-                    <div style='color: white; font-size: 3rem; font-weight: 800;'>{total_jds}</div>
+                            padding: 1.2rem; border-radius: 12px; text-align: center; 
+                            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);'>
+                    <div style='color: white; font-size: 0.8rem; font-weight: 600; 
+                                opacity: 0.9; margin-bottom: 0.3rem;'>📄 Active Jobs</div>
+                    <div style='color: white; font-size: 2rem; font-weight: 800;'>{total_jds}</div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -945,11 +992,11 @@ def show_main_app():
             st.markdown(
                 f"""
                 <div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
-                            padding: 2rem; border-radius: 15px; text-align: center; 
-                            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);'>
-                    <div style='color: white; font-size: 0.9rem; font-weight: 600; 
-                                opacity: 0.9; margin-bottom: 0.5rem;'>👥 Total Resumes</div>
-                    <div style='color: white; font-size: 3rem; font-weight: 800;'>{total_resumes}</div>
+                            padding: 1.2rem; border-radius: 12px; text-align: center; 
+                            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);'>
+                    <div style='color: white; font-size: 0.8rem; font-weight: 600; 
+                                opacity: 0.9; margin-bottom: 0.3rem;'>👥 Total Resumes</div>
+                    <div style='color: white; font-size: 2rem; font-weight: 800;'>{total_resumes}</div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -959,11 +1006,11 @@ def show_main_app():
             st.markdown(
                 f"""
                 <div style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
-                            padding: 2rem; border-radius: 15px; text-align: center; 
-                            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);'>
-                    <div style='color: white; font-size: 0.9rem; font-weight: 600; 
-                                opacity: 0.9; margin-bottom: 0.5rem;'>📈 Avg Match Score</div>
-                    <div style='color: white; font-size: 3rem; font-weight: 800;'>{avg_score}%</div>
+                            padding: 1.2rem; border-radius: 12px; text-align: center; 
+                            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);'>
+                    <div style='color: white; font-size: 0.8rem; font-weight: 600; 
+                                opacity: 0.9; margin-bottom: 0.3rem;'>📈 Avg Match Score</div>
+                    <div style='color: white; font-size: 2rem; font-weight: 800;'>{avg_score}%</div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1006,28 +1053,28 @@ def show_main_app():
                 with col_card:
                     st.markdown(
                         f"""
-                        <div style='background: white; padding: 1.5rem 2rem; border-radius: 15px; 
-                                    margin-bottom: 1rem; box-shadow: 0 3px 15px rgba(0,0,0,0.08); 
-                                    border-left: 5px solid #667eea;'>
+                        <div style='background: white; padding: 1rem 1.5rem; border-radius: 12px; 
+                                    margin-bottom: 0.8rem; box-shadow: 0 2px 10px rgba(0,0,0,0.06); 
+                                    border-left: 4px solid #667eea;'>
                             <div style='display: flex; justify-content: space-between; align-items: center;'>
                                 <div>
-                                    <h3 style='margin: 0; color: #1a1a1a; font-size: 1.3rem;'>
+                                    <h3 style='margin: 0; color: #1a1a1a; font-size: 1.1rem;'>
                                         📋 {job["role"]}
                                     </h3>
-                                    <p style='margin: 0.5rem 0 0 0; color: #888; font-size: 0.9rem;'>
+                                    <p style='margin: 0.3rem 0 0 0; color: #888; font-size: 0.85rem;'>
                                         📍 {location} • 💼 {experience_req}
                                     </p>
-                                    <p style='margin: 0.3rem 0 0 0; color: #aaa; font-size: 0.85rem;'>
+                                    <p style='margin: 0.2rem 0 0 0; color: #aaa; font-size: 0.8rem;'>
                                         Posted {time_str}
                                     </p>
                                 </div>
                                 <div style='text-align: right;'>
-                                    <div style='background: #e3f2fd; padding: 0.5rem 1rem; 
+                                    <div style='background: #e3f2fd; padding: 0.4rem 0.8rem; 
                                                 border-radius: 8px; display: inline-block;'>
-                                        <span style='color: #1976d2; font-weight: 700; font-size: 1.1rem;'>
+                                        <span style='color: #1976d2; font-weight: 700; font-size: 1rem;'>
                                             {job["resume_count"]}
                                         </span>
-                                        <span style='color: #1976d2; font-size: 0.85rem; margin-left: 0.3rem;'>
+                                        <span style='color: #1976d2; font-size: 0.8rem; margin-left: 0.2rem;'>
                                             Resumes
                                         </span>
                                     </div>
@@ -1043,6 +1090,7 @@ def show_main_app():
                         st.session_state.selected_job_id = job["jd_id"]
                         st.session_state.job_view_tab = "Overview"
                         st.rerun()
+                        
         else:
             st.markdown(
                 """
@@ -1059,7 +1107,7 @@ def show_main_app():
     # ===================================================== 
     # JOB DETAILS VIEW — WHEN A JOB IS SELECTED
     # ===================================================== 
-    elif page == "Dashboard" and st.session_state.selected_job_id:
+    elif page == "Dashboard" and "selected_job_id" in st.session_state and st.session_state.selected_job_id:
         # Get current job details
         jds_list = get_jds(org_id=org_id)
         current_job = next((jd for jd in jds_list if jd["jd_id"] == st.session_state.selected_job_id), None)
@@ -1067,18 +1115,18 @@ def show_main_app():
         if not current_job:
             st.error("Job not found")
             st.session_state.selected_job_id = None
-            st.rerun()
+            
         
         # Job title header
         st.markdown(
             f"""
             <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                        padding: 2rem; border-radius: 15px; margin-bottom: 2rem; 
-                        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);'>
-                <h2 style='color: white; margin: 0; font-size: 2rem; font-weight: 700;'>
+                        padding: 1.2rem; border-radius: 12px; margin-bottom: 1rem; 
+                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);'>
+                <h2 style='color: white; margin: 0; font-size: 1.5rem; font-weight: 700;'>
                     {current_job.get('role', current_job.get('job_title', 'Job Details'))}
                 </h2>
-                <p style='color: rgba(255,255,255,0.9); margin-top: 0.5rem; font-size: 1rem;'>
+                <p style='color: rgba(255,255,255,0.9); margin-top: 0.3rem; font-size: 0.9rem;'>
                     {current_job.get('company', 'Company')} • {current_job.get('location', 'Location')}
                 </p>
             </div>
@@ -1178,30 +1226,30 @@ def show_main_app():
                     
                     # Create a container for each candidate
                     with st.container():
-                        # Use columns for layout
-                        col_avatar, col_info, col_score = st.columns([0.5, 3, 0.8])
+                        # Use columns for layout - more compact
+                        col_avatar, col_info, col_score = st.columns([0.4, 3.2, 0.7])
                         
                         with col_avatar:
                             st.markdown(
                                 """
-                                <div style='width: 60px; height: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                <div style='width: 45px; height: 45px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                                             border-radius: 50%; display: flex; align-items: center; justify-content: center;'>
-                                    <span style='font-size: 1.8rem;'>👤</span>
+                                    <span style='font-size: 1.3rem;'>👤</span>
                                 </div>
                                 """,
                                 unsafe_allow_html=True
                             )
                         
                         with col_info:
-                            st.markdown(f"### {ev.get('candidate_name', 'Unknown')}")
+                            st.markdown(f"**{ev.get('candidate_name', 'Unknown')}**")
                             st.caption(f"{candidate_email} • {candidate_experience}")
                             
-                            # Display skills as badges
+                            # Display skills as badges - more compact
                             if candidate_skills:
                                 skills_html = " ".join([
-                                    f"<span style='background: #f0f0f0; padding: 0.35rem 0.9rem; "
-                                    f"border-radius: 20px; font-size: 0.8rem; margin-right: 0.4rem; "
-                                    f"display: inline-block; margin-bottom: 0.4rem; color: #333; font-weight: 500;'>{skill}</span>"
+                                    f"<span style='background: #f0f0f0; padding: 0.25rem 0.7rem; "
+                                    f"border-radius: 15px; font-size: 0.75rem; margin-right: 0.3rem; "
+                                    f"display: inline-block; margin-bottom: 0.3rem; color: #333; font-weight: 500;'>{skill}</span>"
                                     for skill in candidate_skills
                                 ])
                                 st.markdown(skills_html, unsafe_allow_html=True)
@@ -1210,17 +1258,16 @@ def show_main_app():
                             st.markdown(
                                 f"""
                                 <div style='text-align: center; background: {tier_color}; color: white; 
-                                            padding: 0.8rem 1rem; border-radius: 12px;'>
-                                    <div style='font-size: 1.5rem; font-weight: 800;'>{match_percentage}%</div>
-                                    <div style='font-size: 0.7rem; opacity: 0.9;'>Match</div>
+                                            padding: 0.6rem 0.8rem; border-radius: 10px;'>
+                                    <div style='font-size: 1.2rem; font-weight: 800;'>{match_percentage}%</div>
+                                    <div style='font-size: 0.65rem; opacity: 0.9;'>Match</div>
                                 </div>
                                 """,
                                 unsafe_allow_html=True
                             )
                         
-                        # Expander for detailed breakdown
+                        # Expander for detailed breakdown - more compact
                         with st.expander(f"📊 View Detailed Scores", expanded=False):
-                            st.markdown("#### Category Scores")
                             
                             for cat, score in ev.get("category_scores", {}).items():
                                 col_cat, col_score_detail = st.columns([3, 1])
@@ -1235,15 +1282,15 @@ def show_main_app():
                                     score_color = "#10b981" if score_val >= 8 else "#3b82f6" if score_val >= 6 else "#f59e0b" if score_val >= 4 else "#ef4444"
                                     st.markdown(
                                         f"""
-                                        <div style='background: {score_color}; color: white; padding: 0.5rem; 
-                                                    border-radius: 8px; text-align: center; font-weight: 700;'>
+                                        <div style='background: {score_color}; color: white; padding: 0.4rem; 
+                                                    border-radius: 6px; text-align: center; font-weight: 700; font-size: 0.9rem;'>
                                             {score_val:.1f}
                                         </div>
                                         """,
                                         unsafe_allow_html=True
                                     )
                         
-                        st.markdown("---")
+                        st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
             else:
                 st.markdown(
                     """
@@ -1420,7 +1467,7 @@ def show_main_app():
             if not st.session_state.confirm_delete:
                 if st.button("🗑️ Delete Job", key="delete_job_btn", type="secondary", use_container_width=False):
                     st.session_state.confirm_delete = True
-                    st.rerun()
+                    
             else:
                 st.warning("⚠️ **Are you sure?** This will permanently delete the job and all associated resumes, evaluations, and file fingerprints. This action cannot be undone.")
                 
@@ -1438,7 +1485,7 @@ def show_main_app():
                                 # Reset state and go back to dashboard
                                 st.session_state.confirm_delete = False
                                 st.session_state.selected_job_id = None
-                                st.rerun()
+                                
                             else:
                                 st.error(result["message"])
                                 st.session_state.confirm_delete = False
@@ -1446,15 +1493,16 @@ def show_main_app():
                 with col_confirm2:
                     if st.button("❌ Cancel", key="confirm_delete_no", type="secondary", use_container_width=True):
                         st.session_state.confirm_delete = False
-                        st.rerun()
+                        
             
             st.markdown("</div>", unsafe_allow_html=True)
         
         # Back to Dashboard button at the bottom
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         if st.button("← Back to Dashboard", key="back_to_dashboard", use_container_width=True, type="secondary"):
             st.session_state.selected_job_id = None
             st.rerun()
+            
     
     # ===================================================== 
     # CREATE JOB — CLEAN MODERN FORM
@@ -1514,7 +1562,8 @@ def show_main_app():
                     "company",
                     value="Novintix",
                     label_visibility="collapsed",
-                    key="create_job_company"
+                    key="create_job_company",
+                    disabled=True
                 )
             
             with col_b:
