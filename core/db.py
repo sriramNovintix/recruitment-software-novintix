@@ -20,27 +20,33 @@ def init_db():
 # =====================
 # JD COLLECTION
 # =====================
-def save_jd(doc: dict):
+def save_jd(doc: dict, org_id: str = None):
     """
     Expects:
     {
         jd_id,
         role,
         parsed_jd_json,
-        created_at
+        created_at,
+        org_id (for multi-tenant support)
     }
     """
+    if org_id:
+        doc["org_id"] = org_id
     return _db.jds.insert_one(doc).inserted_id
 
 
-def get_jds():
-    return list(_db.jds.find({}, {"_id": 0}))
+def get_jds(org_id: str = None):
+    query = {}
+    if org_id:
+        query["org_id"] = org_id
+    return list(_db.jds.find(query, {"_id": 0}))
 
 
 # =====================
 # RESUME COLLECTION
 # =====================
-def save_resume(doc: dict):
+def save_resume(doc: dict, org_id: str = None):
     """
     Expects:
     {
@@ -48,27 +54,34 @@ def save_resume(doc: dict):
         candidate_name,
         jd_id,
         parsed_resume_json,
-        created_at
+        created_at,
+        org_id (for multi-tenant support)
     }
     """
     doc["status"] = "NOT_REVIEWED"
+    if org_id:
+        doc["org_id"] = org_id
     return _db.resumes.insert_one(doc).inserted_id
 
-def get_unreviewed_resumes_by_jd(jd_id):
-    return list(
-        _db.resumes.find({
-            "jd_id": jd_id,
-            "status": "NOT_REVIEWED"
-        })
-    )
+def get_unreviewed_resumes_by_jd(jd_id, org_id: str = None):
+    query = {
+        "jd_id": jd_id,
+        "status": "NOT_REVIEWED"
+    }
+    if org_id:
+        query["org_id"] = org_id
+    return list(_db.resumes.find(query))
 
 def mark_resume_reviewed(resume_id):
     _db.resumes.update_one(
         {"_id": resume_id},
         {"$set": {"status": "REVIEWED"}}
     )
-def get_evaluations_by_jd_and_tier(jd_id, tier=None, limit=None):
+def get_evaluations_by_jd_and_tier(jd_id, tier=None, limit=None, org_id: str = None):
     query = {"jd_id": jd_id}
+    
+    if org_id:
+        query["org_id"] = org_id
 
     if tier and tier != "ALL":
         query["candidate_tier"] = tier
@@ -81,19 +94,19 @@ def get_evaluations_by_jd_and_tier(jd_id, tier=None, limit=None):
     return list(cursor)
 
 
-def get_resumes_by_jd(jd_id: str):
+def get_resumes_by_jd(jd_id: str, org_id: str = None):
+    query = {"jd_id": jd_id}
+    if org_id:
+        query["org_id"] = org_id
     return list(
-        _db.resumes.find(
-            {"jd_id": jd_id},
-            {"_id": 0}
-        )
+        _db.resumes.find(query, {"_id": 0})
     )
 
 
 # =====================
 # EVALUATION COLLECTION
 # =====================
-def save_evaluation(doc: dict):
+def save_evaluation(doc: dict, org_id: str = None):
     """
     Expects:
     {
@@ -104,21 +117,25 @@ def save_evaluation(doc: dict):
         category_scores,
         overall_score,
         candidate_tier,
-        evaluated_at
+        evaluated_at,
+        org_id (for multi-tenant support)
     }
     """
+    if org_id:
+        doc["org_id"] = org_id
     return _db.evaluations.insert_one(doc).inserted_id
 
 
-def get_evaluations_by_jd(jd_id: str, limit: int = 10):
+def get_evaluations_by_jd(jd_id: str, limit: int = 10, org_id: str = None):
     """
     Returns ranked results for a JD
     """
+    query = {"jd_id": jd_id}
+    if org_id:
+        query["org_id"] = org_id
     return list(
-        _db.evaluations.find(
-            {"jd_id": jd_id},
-            {"_id": 0}
-        )
+        _db.evaluations.find(query, {"_id": 0})
         .sort("overall_score", DESCENDING)
         .limit(limit)
     )
+
