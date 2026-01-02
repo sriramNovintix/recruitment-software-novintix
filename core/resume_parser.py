@@ -6,6 +6,8 @@ from core.llm_client import call_llm
 
 RESUME_SCHEMA = {
     "candidate_name": "string or null",
+    "email": "string or null",
+    "phone": "string or null",
     "total_experience_years": "number or null",
     "titles_with_dates": [
         {

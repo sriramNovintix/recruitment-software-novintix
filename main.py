@@ -3,13 +3,18 @@ TalentMatch - AI-Powered Recruitment Platform
 Main entry point with landing page, authentication, and app routing
 """
 import streamlit as st
+
+# Initialize ConfigManager FIRST before any other imports that need it
+from core.config_manager import ConfigManager
+# This ensures GROQ_API_KEY is loaded before llm_client module initializes
+
 from core.auth import create_user, authenticate_user, get_user_by_id
 
 # Page configuration
 st.set_page_config(
     page_title="TalentMatch - Find the best candidates, faster",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
     page_icon="🎯"
 )
 
@@ -789,12 +794,28 @@ def show_main_app():
         init_db, save_jd, save_resume, save_evaluation,
         get_jds, get_resumes_by_jd, get_evaluations_by_jd,
         get_unreviewed_resumes_by_jd, get_evaluations_by_jd_and_tier,
-        mark_resume_reviewed
+        mark_resume_reviewed, get_jd_by_title, get_total_resumes_count,
+        get_average_match_score, get_job_stats, delete_job_and_related_data
     )
     from core.utils import extract_text
     from core.jd_parser import parse_jd
     from core.resume_parser import parse_resume
     from core.scorer import score_resume, assign_candidate_tier
+    
+    # Override landing page CSS to show sidebar
+    st.markdown("""
+    <style>
+        /* Show sidebar for main app */
+        [data-testid="stSidebar"] {
+            display: block !important;
+        }
+        
+        /* Ensure proper sidebar styling */
+        section[data-testid="stSidebar"] {
+            background-color: #f8f9fa;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
     # Load custom CSS for app
     try:
@@ -829,7 +850,7 @@ def show_main_app():
         
         page = st.radio(
             "Choose a page",
-            ["📝 Upload JD", "👤 Upload Resume", "📊 Results"],
+            ["📊 Dashboard", "➕ Create Job"],
             label_visibility="collapsed"
         )
         
@@ -877,10 +898,719 @@ def show_main_app():
         unsafe_allow_html=True
     )
     
+    # Initialize session state for navigation
+    if "selected_job_id" not in st.session_state:
+        st.session_state.selected_job_id = None
+    if "job_view_tab" not in st.session_state:
+        st.session_state.job_view_tab = "Overview"
+    
+    # ===================================================== 
+    # DASHBOARD — LANDING PAGE WITH JOB CARDS
+    # ===================================================== 
+    if page == "Dashboard" and not st.session_state.selected_job_id:
+        # Get dashboard statistics
+        try:
+            jds_list = get_jds(org_id=org_id)
+            total_jds = len(jds_list)
+            total_resumes = get_total_resumes_count(org_id=org_id)
+            avg_score = get_average_match_score(org_id=org_id)
+            job_stats = get_job_stats(org_id=org_id)
+            
+        except Exception as e:
+            st.error(f"Error fetching dashboard data: {str(e)}")
+            total_jds = 0
+            total_resumes = 0
+            avg_score = 0.0
+            job_stats = []
+        
+        # Stats Cards
+        st.markdown("### 📊 Overview")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown(
+                f"""
+                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                            padding: 2rem; border-radius: 15px; text-align: center; 
+                            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);'>
+                    <div style='color: white; font-size: 0.9rem; font-weight: 600; 
+                                opacity: 0.9; margin-bottom: 0.5rem;'>📄 Active Jobs</div>
+                    <div style='color: white; font-size: 3rem; font-weight: 800;'>{total_jds}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        with col2:
+            st.markdown(
+                f"""
+                <div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+                            padding: 2rem; border-radius: 15px; text-align: center; 
+                            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);'>
+                    <div style='color: white; font-size: 0.9rem; font-weight: 600; 
+                                opacity: 0.9; margin-bottom: 0.5rem;'>👥 Total Resumes</div>
+                    <div style='color: white; font-size: 3rem; font-weight: 800;'>{total_resumes}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        with col3:
+            st.markdown(
+                f"""
+                <div style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
+                            padding: 2rem; border-radius: 15px; text-align: center; 
+                            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);'>
+                    <div style='color: white; font-size: 0.9rem; font-weight: 600; 
+                                opacity: 0.9; margin-bottom: 0.5rem;'>📈 Avg Match Score</div>
+                    <div style='color: white; font-size: 3rem; font-weight: 800;'>{avg_score}%</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Your Jobs Section - CLICKABLE CARDS
+        st.markdown("### 💼 Your Jobs")
+        
+        if job_stats:
+            for job in job_stats:
+                # Get full job details for location and experience
+                full_job = next((jd for jd in jds_list if jd["jd_id"] == job["jd_id"]), None)
+                
+                # Calculate days ago
+                if job.get("created_at"):
+                    now = datetime.utcnow()
+                    created = job["created_at"]
+                    days_ago = (now - created).days
+                    
+                    if days_ago == 0:
+                        time_str = "Today"
+                    elif days_ago == 1:
+                        time_str = "1 day ago"
+                    else:
+                        time_str = f"{days_ago} days ago"
+                else:
+                    time_str = "N/A"
+                
+                # Get location and experience
+                location = full_job.get("location", "Not specified") if full_job else "Not specified"
+                experience_req = "Not specified"
+                if full_job and "parsed_jd_json" in full_job:
+                    experience_req = full_job["parsed_jd_json"].get("experience_required", "Not specified")
+                
+                # Clickable Job card
+                col_card, col_button = st.columns([5, 1])
+                
+                with col_card:
+                    st.markdown(
+                        f"""
+                        <div style='background: white; padding: 1.5rem 2rem; border-radius: 15px; 
+                                    margin-bottom: 1rem; box-shadow: 0 3px 15px rgba(0,0,0,0.08); 
+                                    border-left: 5px solid #667eea;'>
+                            <div style='display: flex; justify-content: space-between; align-items: center;'>
+                                <div>
+                                    <h3 style='margin: 0; color: #1a1a1a; font-size: 1.3rem;'>
+                                        📋 {job["role"]}
+                                    </h3>
+                                    <p style='margin: 0.5rem 0 0 0; color: #888; font-size: 0.9rem;'>
+                                        📍 {location} • 💼 {experience_req}
+                                    </p>
+                                    <p style='margin: 0.3rem 0 0 0; color: #aaa; font-size: 0.85rem;'>
+                                        Posted {time_str}
+                                    </p>
+                                </div>
+                                <div style='text-align: right;'>
+                                    <div style='background: #e3f2fd; padding: 0.5rem 1rem; 
+                                                border-radius: 8px; display: inline-block;'>
+                                        <span style='color: #1976d2; font-weight: 700; font-size: 1.1rem;'>
+                                            {job["resume_count"]}
+                                        </span>
+                                        <span style='color: #1976d2; font-size: 0.85rem; margin-left: 0.3rem;'>
+                                            Resumes
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                
+                with col_button:
+                    if st.button("View →", key=f"view_job_{job['jd_id']}", use_container_width=True):
+                        st.session_state.selected_job_id = job["jd_id"]
+                        st.session_state.job_view_tab = "Overview"
+                        st.rerun()
+        else:
+            st.markdown(
+                """
+                <div style='text-align: center; padding: 3rem; background: #f5f5f5; 
+                            border-radius: 15px; border: 2px dashed #ccc;'>
+                    <div style='font-size: 4rem; margin-bottom: 1rem;'>📭</div>
+                    <h3 style='color: #666; margin: 0;'>No Jobs Yet</h3>
+                    <p style='color: #888; margin-top: 0.5rem;'>Create your first job to get started!</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    
+    # ===================================================== 
+    # JOB DETAILS VIEW — WHEN A JOB IS SELECTED
+    # ===================================================== 
+    elif page == "Dashboard" and st.session_state.selected_job_id:
+        # Get current job details
+        jds_list = get_jds(org_id=org_id)
+        current_job = next((jd for jd in jds_list if jd["jd_id"] == st.session_state.selected_job_id), None)
+        
+        if not current_job:
+            st.error("Job not found")
+            st.session_state.selected_job_id = None
+            st.rerun()
+        
+        # Job title header
+        st.markdown(
+            f"""
+            <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        padding: 2rem; border-radius: 15px; margin-bottom: 2rem; 
+                        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);'>
+                <h2 style='color: white; margin: 0; font-size: 2rem; font-weight: 700;'>
+                    {current_job.get('role', current_job.get('job_title', 'Job Details'))}
+                </h2>
+                <p style='color: rgba(255,255,255,0.9); margin-top: 0.5rem; font-size: 1rem;'>
+                    {current_job.get('company', 'Company')} • {current_job.get('location', 'Location')}
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        # Navigation tabs
+        tab1, tab2, tab3 = st.tabs(["📊 Overview & Candidates", "📤 Upload Resumes", "⚙️ Job Settings"])
+        
+        # TAB 1: Overview & Candidates (Results)
+        with tab1:
+            st.markdown("### 📊 All Candidates")
+            
+            # Get evaluations for this job
+            evaluations = get_evaluations_by_jd_and_tier(
+                st.session_state.selected_job_id, tier=None, limit=100, org_id=org_id
+            )
+            
+            total_candidates = len(evaluations)
+            
+            # Filter controls
+            col_filter, col_count = st.columns([2, 1])
+            
+            with col_filter:
+                tier_filter = st.selectbox(
+                    "Filter by tier",
+                    ["ALL", "TOP", "BEST", "MODERATE", "LOW", "VERY_LOW"],
+                    key="candidates_tier_filter"
+                )
+            
+            with col_count:
+                st.markdown(
+                    f"""
+                    <div style='background: #e3f2fd; padding: 1rem; border-radius: 10px; text-align: center;'>
+                        <span style='color: #1976d2; font-weight: 700; font-size: 1.2rem;'>
+                            {total_candidates}
+                        </span>
+                        <span style='color: #1976d2; font-size: 0.9rem; margin-left: 0.3rem;'>
+                            candidates total
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Filter evaluations
+            if tier_filter != "ALL":
+                evaluations = [ev for ev in evaluations if ev.get("candidate_tier") == tier_filter]
+            
+            # Display candidates as cards
+            if evaluations:
+                for idx, ev in enumerate(evaluations, 1):
+                    # Tier colors and status
+                    tier_colors = {
+                        "TOP": ("#10b981", "shortlisted"),
+                        "BEST": ("#3b82f6", "shortlisted"),
+                        "MODERATE": ("#f59e0b", "pending"),
+                        "LOW": ("#ef4444", "pending"),
+                        "VERY_LOW": ("#991b1b", "rejected")
+                    }
+                    tier_color, status = tier_colors.get(ev.get('candidate_tier', 'MODERATE'), ("#6b7280", "pending"))
+                    
+                    # Get candidate email and experience from parsed resume
+                    candidate_email = "N/A"
+                    candidate_experience = "N/A"
+                    candidate_skills = []
+                    
+                    # Try to get resume data
+                    resume_id = ev.get("resume_id")
+                    if resume_id:
+                        resumes = get_resumes_by_jd(st.session_state.selected_job_id, org_id=org_id)
+                        candidate_resume = next((r for r in resumes if r.get("resume_id") == resume_id), None)
+                        
+                        if candidate_resume and "parsed_resume_json" in candidate_resume:
+                            parsed_resume = candidate_resume["parsed_resume_json"]
+                            candidate_email = parsed_resume.get("email", "N/A")
+                            
+                            # Get experience
+                            exp_years = parsed_resume.get("total_experience_years", 0)
+                            if exp_years:
+                                candidate_experience = f"{exp_years}yr experience"
+                            
+                            # Extract skills from skills_with_context
+                            skills_data = parsed_resume.get("skills_with_context", [])
+                            if skills_data:
+                                # Get top 6 skills
+                                for skill_item in skills_data[:6]:
+                                    if isinstance(skill_item, dict) and "skill" in skill_item:
+                                        candidate_skills.append(skill_item["skill"])
+                                    elif isinstance(skill_item, str):
+                                        candidate_skills.append(skill_item)
+                    
+                    match_percentage = int(ev.get('overall_score', 0))
+                    
+                    # Create a container for each candidate
+                    with st.container():
+                        # Use columns for layout
+                        col_avatar, col_info, col_score = st.columns([0.5, 3, 0.8])
+                        
+                        with col_avatar:
+                            st.markdown(
+                                """
+                                <div style='width: 60px; height: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                            border-radius: 50%; display: flex; align-items: center; justify-content: center;'>
+                                    <span style='font-size: 1.8rem;'>👤</span>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                        
+                        with col_info:
+                            st.markdown(f"### {ev.get('candidate_name', 'Unknown')}")
+                            st.caption(f"{candidate_email} • {candidate_experience}")
+                            
+                            # Display skills as badges
+                            if candidate_skills:
+                                skills_html = " ".join([
+                                    f"<span style='background: #f0f0f0; padding: 0.35rem 0.9rem; "
+                                    f"border-radius: 20px; font-size: 0.8rem; margin-right: 0.4rem; "
+                                    f"display: inline-block; margin-bottom: 0.4rem; color: #333; font-weight: 500;'>{skill}</span>"
+                                    for skill in candidate_skills
+                                ])
+                                st.markdown(skills_html, unsafe_allow_html=True)
+                        
+                        with col_score:
+                            st.markdown(
+                                f"""
+                                <div style='text-align: center; background: {tier_color}; color: white; 
+                                            padding: 0.8rem 1rem; border-radius: 12px;'>
+                                    <div style='font-size: 1.5rem; font-weight: 800;'>{match_percentage}%</div>
+                                    <div style='font-size: 0.7rem; opacity: 0.9;'>Match</div>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                        
+                        # Expander for detailed breakdown
+                        with st.expander(f"📊 View Detailed Scores", expanded=False):
+                            st.markdown("#### Category Scores")
+                            
+                            for cat, score in ev.get("category_scores", {}).items():
+                                col_cat, col_score_detail = st.columns([3, 1])
+                                
+                                with col_cat:
+                                    st.markdown(f"**{cat}**")
+                                    if "category_explanations" in ev:
+                                        st.caption(ev["category_explanations"].get(cat, ""))
+                                
+                                with col_score_detail:
+                                    score_val = score if isinstance(score, (int, float)) else 0
+                                    score_color = "#10b981" if score_val >= 8 else "#3b82f6" if score_val >= 6 else "#f59e0b" if score_val >= 4 else "#ef4444"
+                                    st.markdown(
+                                        f"""
+                                        <div style='background: {score_color}; color: white; padding: 0.5rem; 
+                                                    border-radius: 8px; text-align: center; font-weight: 700;'>
+                                            {score_val:.1f}
+                                        </div>
+                                        """,
+                                        unsafe_allow_html=True
+                                    )
+                        
+                        st.markdown("---")
+            else:
+                st.markdown(
+                    """
+                    <div style='text-align: center; padding: 3rem; background: #f5f5f5; 
+                                border-radius: 15px; border: 2px dashed #ccc;'>
+                        <div style='font-size: 4rem; margin-bottom: 1rem;'>📭</div>
+                        <h3 style='color: #666; margin: 0;'>No Candidates Yet</h3>
+                        <p style='color: #888; margin-top: 0.5rem;'>Upload resumes to see candidates here</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        
+        # TAB 2: Upload Resumes
+        with tab2:
+            st.markdown("### 📤 Upload & Evaluate Resumes")
+            st.markdown("Upload multiple resumes (up to 10). They will be parsed and evaluated automatically.")
+            
+            resume_files = st.file_uploader(
+                "Upload resume files",
+                type=["pdf", "docx", "txt"],
+                accept_multiple_files=True,
+                key="job_resume_uploader",
+                help="Select one or more resume files (Max 200MB per file)"
+            )
+            
+            if resume_files:
+                st.info(f"📊 **{len(resume_files)} file(s) selected**")
+                
+                if st.button("🚀 Parse & Evaluate All Resumes", type="primary", use_container_width=True):
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    for idx, file in enumerate(resume_files):
+                        status_text.markdown(f"**Processing ({idx+1}/{len(resume_files)}):** `{file.name}`")
+                        
+                        # Parse resume
+                        raw_text = extract_text(file)
+                        parsed_resume = parse_resume(raw_text)
+                        resume_id = str(uuid.uuid4())
+                        candidate_name = parsed_resume.get("candidate_name", "Unknown")
+                        
+                        # Save resume
+                        save_resume({
+                            "resume_id": resume_id,
+                            "candidate_name": candidate_name,
+                            "jd_id": st.session_state.selected_job_id,
+                            "parsed_resume_json": parsed_resume,
+                            "created_at": datetime.utcnow()
+                        }, org_id=org_id)
+                        
+                        # Evaluate immediately
+                        result = score_resume(
+                            current_job["parsed_jd_json"],
+                            parsed_resume
+                        )
+                        
+                        save_evaluation({
+                            "jd_id": st.session_state.selected_job_id,
+                            "resume_id": resume_id,
+                            "candidate_name": candidate_name,
+                            "category_scores": result["category_scores"],
+                            "category_explanations": result["category_explanations"],
+                            "overall_score": result["final_score"],
+                            "candidate_tier": assign_candidate_tier(result["final_score"]),
+                            "evaluated_at": datetime.utcnow()
+                        }, org_id=org_id)
+                        
+                        progress_bar.progress((idx + 1) / len(resume_files))
+                    
+                    status_text.empty()
+                    progress_bar.empty()
+                    st.success(f"✅ Successfully processed and evaluated {len(resume_files)} resume(s)!")
+                    st.toast(f"✅ {len(resume_files)} candidate(s) evaluated!", icon="🎉")
+                    
+                    # Refresh to show new candidates
+                    st.balloons()
+        
+        # TAB 3: Job Settings
+        with tab3:
+            st.markdown("### ⚙️ Job Settings")
+            st.markdown("Manage this job posting")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Job Details Section
+            st.markdown(
+                """
+                <div style='background: white; padding: 2rem; border-radius: 15px; 
+                            box-shadow: 0 3px 15px rgba(0,0,0,0.08); margin-bottom: 2rem;'>
+                    <h3 style='color: #1a1a1a; margin: 0 0 1.5rem 0; font-size: 1.3rem;'>Job Details</h3>
+                """,
+                unsafe_allow_html=True
+            )
+            
+            col_detail1, col_detail2 = st.columns(2)
+            
+            with col_detail1:
+                st.markdown(
+                    f"""
+                    <div style='margin-bottom: 1rem;'>
+                        <p style='color: #888; font-size: 0.85rem; margin: 0;'>Title</p>
+                        <p style='color: #1a1a1a; font-size: 1.1rem; font-weight: 600; margin: 0.3rem 0 0 0;'>
+                            {current_job.get('role', current_job.get('job_title', 'N/A'))}
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                
+                st.markdown(
+                    f"""
+                    <div style='margin-bottom: 1rem;'>
+                        <p style='color: #888; font-size: 0.85rem; margin: 0;'>Location</p>
+                        <p style='color: #1a1a1a; font-size: 1.1rem; font-weight: 600; margin: 0.3rem 0 0 0;'>
+                            {current_job.get('location', 'Not specified')}
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            with col_detail2:
+                st.markdown(
+                    f"""
+                    <div style='margin-bottom: 1rem;'>
+                        <p style='color: #888; font-size: 0.85rem; margin: 0;'>Company</p>
+                        <p style='color: #1a1a1a; font-size: 1.1rem; font-weight: 600; margin: 0.3rem 0 0 0;'>
+                            {current_job.get('company', user['organization'])}
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                
+                # Get status from parsed_jd_json if available
+                experience_req = "Not specified"
+                if "parsed_jd_json" in current_job:
+                    experience_req = current_job["parsed_jd_json"].get("experience_required", "Not specified")
+                
+                st.markdown(
+                    f"""
+                    <div style='margin-bottom: 1rem;'>
+                        <p style='color: #888; font-size: 0.85rem; margin: 0;'>Experience Required</p>
+                        <p style='color: #1a1a1a; font-size: 1.1rem; font-weight: 600; margin: 0.3rem 0 0 0;'>
+                            {experience_req}
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Danger Zone Section
+            st.markdown(
+                """
+                <div style='background: white; padding: 2rem; border-radius: 15px; 
+                            box-shadow: 0 3px 15px rgba(0,0,0,0.08); border: 2px solid #fee2e2;'>
+                    <h3 style='color: #dc2626; margin: 0 0 0.5rem 0; font-size: 1.3rem;'>⚠️ Danger Zone</h3>
+                    <p style='color: #888; font-size: 0.9rem; margin: 0 0 1.5rem 0;'>
+                        Irreversible actions
+                    </p>
+                """,
+                unsafe_allow_html=True
+            )
+            
+            # Delete confirmation
+            if "confirm_delete" not in st.session_state:
+                st.session_state.confirm_delete = False
+            
+            if not st.session_state.confirm_delete:
+                if st.button("🗑️ Delete Job", key="delete_job_btn", type="secondary", use_container_width=False):
+                    st.session_state.confirm_delete = True
+                    st.rerun()
+            else:
+                st.warning("⚠️ **Are you sure?** This will permanently delete the job and all associated resumes, evaluations, and file fingerprints. This action cannot be undone.")
+                
+                col_confirm1, col_confirm2 = st.columns(2)
+                
+                with col_confirm1:
+                    if st.button("✅ Yes, Delete Everything", key="confirm_delete_yes", type="primary", use_container_width=True):
+                        with st.spinner("Deleting job and all related data..."):
+                            result = delete_job_and_related_data(st.session_state.selected_job_id, org_id=org_id)
+                            
+                            if result["success"]:
+                                st.success(result["message"])
+                                st.toast("✅ Job deleted successfully!", icon="🗑️")
+                                
+                                # Reset state and go back to dashboard
+                                st.session_state.confirm_delete = False
+                                st.session_state.selected_job_id = None
+                                st.rerun()
+                            else:
+                                st.error(result["message"])
+                                st.session_state.confirm_delete = False
+                
+                with col_confirm2:
+                    if st.button("❌ Cancel", key="confirm_delete_no", type="secondary", use_container_width=True):
+                        st.session_state.confirm_delete = False
+                        st.rerun()
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Back to Dashboard button at the bottom
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        if st.button("← Back to Dashboard", key="back_to_dashboard", use_container_width=True, type="secondary"):
+            st.session_state.selected_job_id = None
+            st.rerun()
+    
+    # ===================================================== 
+    # CREATE JOB — CLEAN MODERN FORM
+    # ===================================================== 
+    elif page == "Create Job":
+        # Centered container
+        col1, col2, col3 = st.columns([1, 2, 1])
+        
+        with col2:
+            # Simple header card
+            st.markdown(
+                """
+                <div style='background: white; padding: 2rem; border-radius: 15px; 
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 2rem; text-align: center;'>
+                    <h2 style='color: #1a1a1a; margin: 0; font-size: 1.8rem; font-weight: 700;'>Create a New Job</h2>
+                    <p style='color: #666; margin-top: 0.5rem; font-size: 0.95rem;'>
+                        Define the role and upload the job description
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+            
+            # Job Title
+            st.markdown(
+                """
+                <label style='font-weight: 600; color: #1a1a1a; font-size: 0.9rem; 
+                              display: block; margin-bottom: 0.5rem;'>
+                    Job Title <span style='color: #ef4444;'>*</span>
+                </label>
+                """,
+                unsafe_allow_html=True
+            )
+            job_title = st.text_input(
+                "job_title",
+                placeholder="e.g., Senior Software Engineer",
+                label_visibility="collapsed",
+                key="create_job_title"
+            )
+            
+            st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+            
+            # Company and Location in two columns
+            col_a, col_b = st.columns(2)
+            
+            with col_a:
+                st.markdown(
+                    """
+                    <label style='font-weight: 600; color: #1a1a1a; font-size: 0.9rem; 
+                                  display: block; margin-bottom: 0.5rem;'>
+                        Company
+                    </label>
+                    """,
+                    unsafe_allow_html=True
+                )
+                company = st.text_input(
+                    "company",
+                    value="Novintix",
+                    label_visibility="collapsed",
+                    key="create_job_company"
+                )
+            
+            with col_b:
+                st.markdown(
+                    """
+                    <label style='font-weight: 600; color: #1a1a1a; font-size: 0.9rem; 
+                                  display: block; margin-bottom: 0.5rem;'>
+                        Location
+                    </label>
+                    """,
+                    unsafe_allow_html=True
+                )
+                location = st.text_input(
+                    "location",
+                    placeholder="e.g., Remote, NYC",
+                    label_visibility="collapsed",
+                    key="create_job_location"
+                )
+            
+            st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+            
+            # Job Description Document Upload
+            st.markdown(
+                """
+                <label style='font-weight: 600; color: #1a1a1a; font-size: 0.9rem; 
+                              display: block; margin-bottom: 0.5rem;'>
+                    Job Description Document <span style='color: #ef4444;'>*</span>
+                </label>
+                """,
+                unsafe_allow_html=True
+            )
+            
+            jd_file = st.file_uploader(
+                "Upload JD Document",
+                type=["pdf", "docx", "txt"],
+                label_visibility="collapsed",
+                key="create_job_jd_file",
+                help="Drag and drop or browse files (PDF, DOCX, TXT)"
+            )
+            
+            st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+            
+            # Submit Button - dark blue/black style
+            if st.button("📋 Submit Job Post", type="primary", use_container_width=True, key="submit_create_job"):
+                # Validation
+                if not job_title:
+                    st.error("❌ Please enter a job title")
+                elif not jd_file:
+                    st.error("❌ Please upload a job description document")
+                else:
+                    # Check for duplicate job title
+                    existing_jd = get_jd_by_title(job_title, org_id=org_id)
+                    
+                    if existing_jd:
+                        st.error(f"❌ A job with the title '{job_title}' already exists. Please use a different job title.")
+                    else:
+                        with st.spinner("🔄 Processing job description..."):
+                            try:
+                                # Extract and parse JD
+                                raw_text = extract_text(jd_file)
+                                parsed_jd = parse_jd(raw_text)
+                                
+                                # Override role with user-provided job title
+                                parsed_jd["role"] = job_title
+                                
+                                # Set location (default to Coimbatore if not provided)
+                                final_location = location.strip() if location and location.strip() else "Coimbatore"
+                                parsed_jd["location"] = final_location
+                                
+                                # Save to database with job_title and location at top level
+                                jd_id = str(uuid.uuid4())
+                                save_jd({
+                                    "jd_id": jd_id,
+                                    "job_title": job_title,  # Top level field
+                                    "role": job_title,
+                                    "company": company,
+                                    "location": final_location,  # Top level field
+                                    "parsed_jd_json": parsed_jd,
+                                    "created_at": datetime.utcnow()
+                                }, org_id=org_id)
+                                
+                                st.success(f"✅ Job '{job_title}' created successfully!")
+                                st.toast(f"✅ Job '{job_title}' created!", icon="🎉")
+                                
+                                # Show parsed details in expander
+                                with st.expander("📄 View Parsed Job Details"):
+                                    st.json(parsed_jd)
+                                
+                            except Exception as e:
+                                st.error(f"❌ Error processing job description: {str(e)}")
+            
+    
     # ===================================================== 
     # LAYER 1 — JD UPLOAD (ISOLATED)
     # ===================================================== 
-    if page == "Upload JD":
+    elif page == "Upload JD":
         col1, col2, col3 = st.columns([1, 2.5, 1])
         
         with col2:
