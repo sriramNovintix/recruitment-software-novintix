@@ -296,6 +296,16 @@ def load_landing_css():
             display: block;
         }
         
+        /* Force all labels and text to be dark */
+        label, .stMarkdown p, .stMarkdown span {
+            color: #1a1a1a !important;
+        }
+        
+        /* Streamlit input labels */
+        .stTextInput label, .stSelectbox label {
+            color: #1a1a1a !important;
+        }
+        
         /* FIX: Input field styling - Light background */
         .stTextInput > div > div > input {
             padding: 0.75rem 1rem !important;
@@ -930,14 +940,14 @@ def show_main_app():
     # ---------------- HEADER ----------------
     st.markdown(
         f"""
-        <div style='text-align: center; padding: 1rem 0 1.5rem 0; margin-bottom: 1rem;'>
-            <h1 style='font-size: 2.2rem; font-weight: 800; margin-bottom: 0.3rem; 
+        <div style='text-align: center; padding: 0.5rem 0 0.8rem 0; margin-bottom: 0.5rem;'>
+            <h1 style='font-size: 2rem; font-weight: 800; margin-bottom: 0.2rem; 
                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        background-clip: text;'>
                 Resume Evaluation System
             </h1>
-            <p style='font-size: 1rem; color: #666; margin: 0; font-weight: 500;'>
+            <p style='font-size: 0.9rem; color: #666; margin: 0; font-weight: 500;'>
                 🤖 AI-Powered Candidate Assessment
             </p>
         </div>
@@ -1135,7 +1145,7 @@ def show_main_app():
         )
         
         # Navigation tabs
-        tab1, tab2, tab3 = st.tabs(["📊 Overview & Candidates", "📤 Upload Resumes", "⚙️ Job Settings"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview & Candidates", "📤 Upload Resumes", "📈 Analytics", "⚙️ Job Settings"])
         
         # TAB 1: Overview & Candidates (Results)
         with tab1:
@@ -1369,8 +1379,387 @@ def show_main_app():
                     # Refresh to show new candidates
                     st.balloons()
         
-        # TAB 3: Job Settings
+        # TAB 3: Analytics
         with tab3:
+            st.markdown("### 📈 Analytics Dashboard")
+            st.markdown("Comprehensive insights into candidate evaluation metrics")
+            
+            # Get all evaluations and resumes for this job
+            evaluations = get_evaluations_by_jd_and_tier(
+                st.session_state.selected_job_id, tier=None, limit=1000, org_id=org_id
+            )
+            
+            if not evaluations or len(evaluations) == 0:
+                st.info("📊 No evaluation data available yet. Upload and evaluate resumes to see analytics.")
+            else:
+                # Prepare data for charts
+                import plotly.graph_objects as go
+                import plotly.express as px
+                from collections import Counter
+                
+                # Get JD mandatory skills
+                jd_mandatory_skills = []
+                if "parsed_jd_json" in current_job:
+                    jd_mandatory_skills = current_job["parsed_jd_json"].get("mandatory_skills", [])
+                
+                # Extract data from evaluations
+                score_distribution = []
+                tier_counts = Counter()
+                category_avg_scores = {}
+                skills_match_data = []
+                
+                for ev in evaluations:
+                    score_distribution.append(ev.get("overall_score", 0))
+                    tier_counts[ev.get("candidate_tier", "UNKNOWN")] += 1
+                    
+                    # Aggregate category scores
+                    for cat, score in ev.get("category_scores", {}).items():
+                        if cat not in category_avg_scores:
+                            category_avg_scores[cat] = []
+                        category_avg_scores[cat].append(score)
+                    
+                    # Calculate skills match percentage
+                    resume_id = ev.get("resume_id")
+                    if resume_id and jd_mandatory_skills:
+                        resumes = get_resumes_by_jd(st.session_state.selected_job_id, org_id=org_id)
+                        candidate_resume = next((r for r in resumes if r.get("resume_id") == resume_id), None)
+                        
+                        if candidate_resume and "parsed_resume_json" in candidate_resume:
+                            parsed_resume = candidate_resume["parsed_resume_json"]
+                            candidate_skills = []
+                            
+                            # Extract all skills
+                            skills_data = parsed_resume.get("skills_with_context", [])
+                            for skill_item in skills_data:
+                                if isinstance(skill_item, dict) and "skill" in skill_item:
+                                    candidate_skills.append(skill_item["skill"].lower())
+                                elif isinstance(skill_item, str):
+                                    candidate_skills.append(skill_item.lower())
+                            
+                            # Calculate match
+                            matched = sum(1 for req_skill in jd_mandatory_skills if any(req_skill.lower() in cs for cs in candidate_skills))
+                            match_pct = (matched / len(jd_mandatory_skills) * 100) if jd_mandatory_skills else 0
+                            skills_match_data.append({
+                                "candidate": ev.get("candidate_name", "Unknown"),
+                                "match_percentage": match_pct,
+                                "matched": matched,
+                                "total": len(jd_mandatory_skills)
+                            })
+                
+                # Calculate averages for category scores
+                category_averages = {cat: sum(scores)/len(scores) for cat, scores in category_avg_scores.items()}
+                
+                # Create 2x2 grid for charts
+                col1, col2 = st.columns(2)
+                
+                # CHART 1: Score Distribution (Histogram)
+                with col1:
+                    st.markdown(
+                        """
+                        <div style='background: white; padding: 1rem; border-radius: 12px; 
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1rem;'>
+                            <h4 style='margin: 0 0 0.5rem 0; color: #1a1a1a; font-size: 1rem;'>📊 Score Distribution</h4>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    fig1 = go.Figure()
+                    fig1.add_trace(go.Histogram(
+                        x=score_distribution,
+                        nbinsx=10,
+                        marker_color='#667eea',
+                        marker_line_color='#764ba2',
+                        marker_line_width=1.5,
+                        opacity=0.8,
+                        name='Candidates'
+                    ))
+                    fig1.update_layout(
+                        xaxis_title="Overall Score",
+                        yaxis_title="Number of Candidates",
+                        height=280,
+                        margin=dict(l=40, r=20, t=20, b=40),
+                        plot_bgcolor='white',
+                        paper_bgcolor='white',
+                        font=dict(size=11, color='#1a1a1a'),
+                        showlegend=False,
+                        xaxis=dict(
+                            title_font=dict(color='#1a1a1a'),
+                            tickfont=dict(color='#1a1a1a')
+                        ),
+                        yaxis=dict(
+                            title_font=dict(color='#1a1a1a'),
+                            tickfont=dict(color='#1a1a1a')
+                        )
+                    )
+                    fig1.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.3)', tickcolor='#1a1a1a')
+                    fig1.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.3)', tickcolor='#1a1a1a')
+                    st.plotly_chart(fig1, use_container_width=True, config={'displayModeBar': False})
+                
+                # CHART 2: Candidate Tier Distribution (Pie Chart)
+                with col2:
+                    st.markdown(
+                        """
+                        <div style='background: white; padding: 1rem; border-radius: 12px; 
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1rem;'>
+                            <h4 style='margin: 0 0 0.5rem 0; color: #1a1a1a; font-size: 1rem;'>🎯 Candidate Tier Distribution</h4>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    tier_colors_map = {
+                        "TOP": "#10b981",
+                        "BEST": "#3b82f6",
+                        "MODERATE": "#f59e0b",
+                        "LOW": "#ef4444",
+                        "VERY_LOW": "#991b1b"
+                    }
+                    
+                    tier_labels = list(tier_counts.keys())
+                    tier_values = list(tier_counts.values())
+                    tier_colors = [tier_colors_map.get(tier, "#6b7280") for tier in tier_labels]
+                    
+                    fig2 = go.Figure(data=[go.Pie(
+                        labels=tier_labels,
+                        values=tier_values,
+                        marker=dict(colors=tier_colors, line=dict(color='white', width=2)),
+                        hole=0.4,
+                        textinfo='label+percent',
+                        textfont=dict(size=11, color='#1a1a1a'),
+                        insidetextfont=dict(color='white', size=11)
+                    )])
+                    fig2.update_layout(
+                        height=280,
+                        margin=dict(l=20, r=20, t=20, b=60),
+                        showlegend=True,
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=-0.3,
+                            xanchor="center",
+                            x=0.5,
+                            font=dict(size=10, color='#1a1a1a')
+                        ),
+                        paper_bgcolor='white',
+                        font=dict(size=11, color='#1a1a1a')
+                    )
+                    st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
+                
+                col3, col4 = st.columns(2)
+                
+                # CHART 3: Mandatory Skills Coverage (Bar Chart)
+                with col3:
+                    st.markdown(
+                        """
+                        <div style='background: white; padding: 1rem; border-radius: 12px; 
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1rem;'>
+                            <h4 style='margin: 0 0 0.5rem 0; color: #1a1a1a; font-size: 1rem;'>🎓 Mandatory Skills Coverage</h4>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    if jd_mandatory_skills and evaluations:
+                        # Count how many candidates have each mandatory skill
+                        skill_counts = {skill: 0 for skill in jd_mandatory_skills}
+                        
+                        for ev in evaluations:
+                            resume_id = ev.get("resume_id")
+                            if resume_id:
+                                resumes = get_resumes_by_jd(st.session_state.selected_job_id, org_id=org_id)
+                                candidate_resume = next((r for r in resumes if r.get("resume_id") == resume_id), None)
+                                
+                                if candidate_resume and "parsed_resume_json" in candidate_resume:
+                                    parsed_resume = candidate_resume["parsed_resume_json"]
+                                    candidate_skills = []
+                                    
+                                    # Extract all skills
+                                    skills_data = parsed_resume.get("skills_with_context", [])
+                                    for skill_item in skills_data:
+                                        if isinstance(skill_item, dict) and "skill" in skill_item:
+                                            candidate_skills.append(skill_item["skill"].lower())
+                                        elif isinstance(skill_item, str):
+                                            candidate_skills.append(skill_item.lower())
+                                    
+                                    # Check which mandatory skills this candidate has
+                                    for req_skill in jd_mandatory_skills:
+                                        if any(req_skill.lower() in cs for cs in candidate_skills):
+                                            skill_counts[req_skill] += 1
+                        
+                        # Sort by count
+                        sorted_skills = sorted(skill_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+                        skills = [s[0] for s in sorted_skills]
+                        counts = [s[1] for s in sorted_skills]
+                        
+                        # Calculate percentage for color
+                        total_candidates = len(evaluations)
+                        percentages = [(count / total_candidates * 100) if total_candidates > 0 else 0 for count in counts]
+                        
+                        fig3 = go.Figure()
+                        fig3.add_trace(go.Bar(
+                            x=counts,
+                            y=skills,
+                            orientation='h',
+                            marker=dict(
+                                color=percentages,
+                                colorscale=[[0, '#ef4444'], [0.5, '#f59e0b'], [1, '#10b981']],
+                                line=dict(color='white', width=1),
+                                cmin=0,
+                                cmax=100
+                            ),
+                            text=[f"{count}" for count in counts],
+                            textposition='inside',
+                            textfont=dict(color='white', size=11, family='Arial Black'),
+                            hovertemplate='<b>%{y}</b><br>Candidates: %{x}<br>Coverage: %{customdata:.1f}%<extra></extra>',
+                            customdata=percentages
+                        ))
+                        
+                        fig3.update_layout(
+                            xaxis_title="Number of Candidates",
+                            yaxis_title="Mandatory Skills",
+                            height=280,
+                            margin=dict(l=120, r=20, t=20, b=40),
+                            plot_bgcolor='white',
+                            paper_bgcolor='white',
+                            font=dict(size=11, color='#1a1a1a'),
+                            showlegend=False,
+                            xaxis=dict(
+                                title_font=dict(color='#1a1a1a'),
+                                tickfont=dict(color='#1a1a1a')
+                            ),
+                            yaxis=dict(
+                                title_font=dict(color='#1a1a1a'),
+                                tickfont=dict(color='#1a1a1a')
+                            )
+                        )
+                        fig3.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.3)', tickcolor='#1a1a1a')
+                        fig3.update_yaxes(showgrid=False, tickcolor='#1a1a1a')
+                        st.plotly_chart(fig3, use_container_width=True, config={'displayModeBar': False})
+                    else:
+                        st.info("No mandatory skills data available")
+                
+                # CHART 4: Top Performers Leaderboard (Bar Chart)
+                with col4:
+                    st.markdown(
+                        """
+                        <div style='background: white; padding: 1rem; border-radius: 12px; 
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 0.5rem;'>
+                            <h4 style='margin: 0 0 0.5rem 0; color: #1a1a1a; font-size: 1rem;'>🏆 Top Candidates</h4>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    # Number input for top N candidates
+                    col_input1, col_input2 = st.columns([2, 1])
+                    with col_input1:
+                        st.markdown(
+                            """
+                            <p style='font-size: 0.85rem; color: #666; margin: 0 0 0.3rem 0;'>
+                                Number of candidates to display:
+                            </p>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                    with col_input2:
+                        top_n_candidates = st.number_input(
+                            "top_n_chart",
+                            min_value=1,
+                            max_value=20,
+                            value=5,
+                            step=1,
+                            label_visibility="collapsed",
+                            key="top_n_candidates_chart"
+                        )
+                    
+                    if evaluations and len(evaluations) > 0:
+                        # Get top N candidates by score
+                        top_candidates = sorted(evaluations, key=lambda x: x.get("overall_score", 0), reverse=True)[:top_n_candidates]
+                        
+                        # Prepare data
+                        names = [ev.get("candidate_name", "Unknown")[:20] for ev in top_candidates]
+                        scores = [ev.get("overall_score", 0) for ev in top_candidates]
+                        tiers = [ev.get("candidate_tier", "UNKNOWN") for ev in top_candidates]
+                        
+                        # Color by tier
+                        tier_colors_map = {
+                            "TOP": "#10b981",
+                            "BEST": "#3b82f6",
+                            "MODERATE": "#f59e0b",
+                            "LOW": "#ef4444",
+                            "VERY_LOW": "#991b1b"
+                        }
+                        colors = [tier_colors_map.get(tier, "#6b7280") for tier in tiers]
+                        
+                        fig4 = go.Figure()
+                        fig4.add_trace(go.Bar(
+                            y=names,
+                            x=scores,
+                            orientation='h',
+                            marker=dict(
+                                color=colors,
+                                line=dict(color='white', width=1)
+                            ),
+                            text=[f"{score:.1f}" for score in scores],
+                            textposition='inside',
+                            textfont=dict(color='white', size=10, family='Arial Black'),
+                            hovertemplate='<b>%{y}</b><br>Score: %{x:.1f}<br>Tier: %{customdata}<extra></extra>',
+                            customdata=tiers
+                        ))
+                        
+                        # Adjust height based on number of candidates
+                        chart_height = max(200, min(280, 40 * top_n_candidates + 80))
+                        
+                        fig4.update_layout(
+                            xaxis_title="Overall Score",
+                            yaxis_title="",
+                            height=chart_height,
+                            margin=dict(l=120, r=20, t=10, b=40),
+                            plot_bgcolor='white',
+                            paper_bgcolor='white',
+                            font=dict(size=11, color='#1a1a1a'),
+                            showlegend=False,
+                            xaxis=dict(
+                                title_font=dict(color='#1a1a1a'),
+                                tickfont=dict(color='#1a1a1a'),
+                                range=[0, 100]
+                            ),
+                            yaxis=dict(
+                                tickfont=dict(color='#1a1a1a'),
+                                autorange='reversed'  # Top performer at top
+                            )
+                        )
+                        fig4.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.3)', tickcolor='#1a1a1a')
+                        fig4.update_yaxes(showgrid=False, tickcolor='#1a1a1a')
+                        st.plotly_chart(fig4, use_container_width=True, config={'displayModeBar': False})
+                    else:
+                        st.info("No evaluation data available")
+                
+                # Summary Statistics
+                st.markdown("---")
+                st.markdown("#### 📊 Summary Statistics")
+                
+                stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
+                
+                with stat_col1:
+                    avg_score = sum(score_distribution) / len(score_distribution) if score_distribution else 0
+                    st.metric("Average Score", f"{avg_score:.1f}", delta=None)
+                
+                with stat_col2:
+                    max_score = max(score_distribution) if score_distribution else 0
+                    st.metric("Highest Score", f"{max_score:.1f}", delta=None)
+                
+                with stat_col3:
+                    min_score = min(score_distribution) if score_distribution else 0
+                    st.metric("Lowest Score", f"{min_score:.1f}", delta=None)
+                
+                with stat_col4:
+                    total_evaluated = len(evaluations)
+                    st.metric("Total Evaluated", total_evaluated, delta=None)
+        
+        # TAB 4: Job Settings
+        with tab4:
             st.markdown("### ⚙️ Job Settings")
             st.markdown("Manage this job posting")
             
