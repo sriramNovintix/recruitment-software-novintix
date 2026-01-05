@@ -863,9 +863,45 @@ def show_main_app():
             display: block !important;
         }
         
+        /* Remove sidebar scrolling - make it fixed */
+        section[data-testid="stSidebar"] > div {
+            overflow-y: auto !important;
+            height: 100vh !important;
+        }
+        
+        /* Allow main content to scroll */
+        .main {
+            overflow-y: auto !important;
+        }
+        
         /* Ensure proper sidebar styling */
         section[data-testid="stSidebar"] {
             background-color: #f8f9fa;
+        }
+        
+        /* Reduce main content heading sizes */
+        .main h1 {
+            font-size: 1.5rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .main h2 {
+            font-size: 1.3rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .main h3 {
+            font-size: 1.1rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        /* Reduce padding in main content area */
+        .main .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 1rem !important;
         }
         
         /* Disabled input text color fix for main app */
@@ -898,15 +934,13 @@ def show_main_app():
     
     # ---------------- SIDEBAR ----------------
     with st.sidebar:
-        # User/Organization Info
+        # Logo/Brand Section with Organization name and user email
         st.markdown(
             f"""
-            <div style='text-align: center; padding: 1.5rem 0; margin-bottom: 1rem; 
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        border-radius: 12px; color: white;'>
-                <div style='font-size: 2.5rem; margin-bottom: 0.5rem;'>🏢</div>
-                <h3 style='color: white; margin: 0; font-size: 1rem;'>{user['organization']}</h3>
-                <p style='color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-top: 0.3rem;'>{user['email']}</p>
+            <div style='text-align: center; padding: 1.5rem 0; margin-bottom: 1.5rem;'>
+                <div style='font-size: 3rem; margin-bottom: 0.5rem;'>🏢</div>
+                <h2 style='color: #667eea; margin: 0; font-size: 1.3rem;'>Novintix</h2>
+                <p style='color: #888; font-size: 0.85rem; margin-top: 0.3rem;'>{user['email']}</p>
             </div>
             """,
             unsafe_allow_html=True
@@ -914,65 +948,107 @@ def show_main_app():
         
         st.markdown("---")
         
-        st.markdown("### 🎯 Navigation")
-        
-        page = st.radio(
-            "Choose a page",
-            ["📊 Dashboard", "➕ Create Job"],
-            label_visibility="collapsed",
-            key="main_nav_radio"
-        )
+        # Check if we're inside a job
+        if "selected_job_id" in st.session_state and st.session_state.selected_job_id:
+            # Inside a job - show job navigation
+            jds_list = get_jds(org_id=org_id)
+            current_job = next((jd for jd in jds_list if jd["jd_id"] == st.session_state.selected_job_id), None)
             
-        
-        st.markdown("---")
-        
-        # Logout button
-        if st.button("🚪 Logout", use_container_width=True):
-            st.session_state.authenticated = False
-            st.session_state.user = None
-            st.session_state.page = "landing"
-            # Reset all navigation state
-            st.session_state.selected_job_id = None
-            st.session_state.job_view_tab = "Overview"
+            if current_job:
+                # Job header in sidebar
+                st.markdown(
+                    f"""
+                    <div style='background: #f0f4ff; padding: 0.6rem 0.8rem; border-radius: 8px; margin-bottom: 0.8rem;'>
+                        <div style='font-size: 1.2rem; margin-bottom: 0.2rem;'>💼</div>
+                        <h4 style='margin: 0; color: #1a1a1a; font-size: 0.85rem; font-weight: 700;'>
+                            {current_job.get('role', 'Job')[:30]}
+                        </h4>
+                        <p style='margin: 0.15rem 0 0 0; color: #888; font-size: 0.75rem;'>
+                            {current_job.get('company', 'Novintix')}
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                
+                st.markdown("### Navigation")
+                
+                # Job-specific navigation
+                job_nav = st.radio(
+                    "Job Navigation",
+                    ["📈 Analytics", "👥 Candidates", "📤 Upload Resumes", "⚙️ Settings"],
+                    label_visibility="collapsed",
+                    key="job_nav_radio"
+                )
+                
+                # Store selected nav in session state
+                st.session_state.job_nav_selection = job_nav
+                
+                st.markdown("---")
+                st.markdown("### Actions")
+                
+                # Back to Dashboard button in sidebar
+                if st.button("← Back to Dashboard", key="sidebar_back_btn", use_container_width=True):
+                    st.session_state.selected_job_id = None
+                    st.rerun()
+                
+                # Footer Info
+                st.markdown(
+                    """
+                    <div style='text-align: center; padding: 1rem; margin-top: 2rem; color: #888; font-size: 0.75rem;'>
+                        <p style='margin: 0;'>💡 AI-Powered<br/>Recruitment Platform</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        else:
+            # Dashboard - show main navigation
+            st.markdown("### 🎯 Menu")
             
+            page = st.radio(
+                "Choose a page",
+                ["📊 Dashboard", "➕ Create Job"],
+                label_visibility="collapsed",
+                key="main_nav_radio"
+            )
             
-        
-        # Footer Info
-        st.markdown(
-            """
-            <div style='text-align: center; padding: 1rem; margin-top: 2rem; color: #888; font-size: 0.75rem;'>
-                <p style='margin: 0;'>💡 Tip: Upload JD first,<br/>then add resumes</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+            st.markdown("---")
+            
+            # Logout button - only on dashboard
+            if st.button("🚪 Logout", use_container_width=True):
+                st.session_state.authenticated = False
+                st.session_state.user = None
+                st.session_state.page = "landing"
+                # Reset all navigation state
+                st.session_state.selected_job_id = None
+                st.session_state.job_view_tab = "Overview"
+                st.rerun()
+            
+            # Footer Info
+            st.markdown(
+                """
+                <div style='text-align: center; padding: 1rem; margin-top: 2rem; color: #888; font-size: 0.75rem;'>
+                    <p style='margin: 0;'>💡 AI-Powered<br/>Recruitment Platform</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
     
     # Clean page names for logic
-    page = page.split(" ", 1)[1] if " " in page else page
-    
-    # ---------------- HEADER ----------------
-    st.markdown(
-        f"""
-        <div style='text-align: center; padding: 0.5rem 0 0.8rem 0; margin-bottom: 0.5rem;'>
-            <h1 style='font-size: 2rem; font-weight: 800; margin-bottom: 0.2rem; 
-                       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-                       background-clip: text;'>
-                Resume Evaluation System
-            </h1>
-            <p style='font-size: 0.9rem; color: #666; margin: 0; font-weight: 500;'>
-                🤖 AI-Powered Candidate Assessment
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    if "selected_job_id" in st.session_state and st.session_state.selected_job_id:
+        # Inside a job - use job navigation
+        page = "Dashboard"  # Keep page as Dashboard to show job view
+    else:
+        # Dashboard or Create Job
+        page = page.split(" ", 1)[1] if " " in page else page
     
     # Initialize session state for navigation
     if "selected_job_id" not in st.session_state:
         st.session_state.selected_job_id = None
     if "job_view_tab" not in st.session_state:
         st.session_state.job_view_tab = "Overview"
+    if "job_nav_selection" not in st.session_state:
+        st.session_state.job_nav_selection = "📈 Analytics"
     
     # ===================================================== 
     # DASHBOARD — LANDING PAGE WITH JOB CARDS
@@ -993,19 +1069,19 @@ def show_main_app():
             avg_score = 0.0
             job_stats = []
         
-        # Stats Cards
-        st.markdown("### 📊 Overview")
+        # Stats Cards - 3 cards only
+        st.markdown("#### 📊 Overview")
         col1, col2, col3 = st.columns(3)
         
         with col1:
             st.markdown(
                 f"""
                 <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                            padding: 1.2rem; border-radius: 12px; text-align: center; 
+                            padding: 1.5rem; border-radius: 12px; text-align: center; 
                             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);'>
-                    <div style='color: white; font-size: 0.8rem; font-weight: 600; 
-                                opacity: 0.9; margin-bottom: 0.3rem;'>📄 Active Jobs</div>
-                    <div style='color: white; font-size: 2rem; font-weight: 800;'>{total_jds}</div>
+                    <div style='color: white; font-size: 0.85rem; font-weight: 600; 
+                                opacity: 0.9; margin-bottom: 0.5rem;'>📄 Active Jobs</div>
+                    <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{total_jds}</div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1015,11 +1091,11 @@ def show_main_app():
             st.markdown(
                 f"""
                 <div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
-                            padding: 1.2rem; border-radius: 12px; text-align: center; 
+                            padding: 1.5rem; border-radius: 12px; text-align: center; 
                             box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);'>
-                    <div style='color: white; font-size: 0.8rem; font-weight: 600; 
-                                opacity: 0.9; margin-bottom: 0.3rem;'>👥 Total Resumes</div>
-                    <div style='color: white; font-size: 2rem; font-weight: 800;'>{total_resumes}</div>
+                    <div style='color: white; font-size: 0.85rem; font-weight: 600; 
+                                opacity: 0.9; margin-bottom: 0.5rem;'>👥 Total Resumes</div>
+                    <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{total_resumes}</div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1029,11 +1105,11 @@ def show_main_app():
             st.markdown(
                 f"""
                 <div style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
-                            padding: 1.2rem; border-radius: 12px; text-align: center; 
+                            padding: 1.5rem; border-radius: 12px; text-align: center; 
                             box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);'>
-                    <div style='color: white; font-size: 0.8rem; font-weight: 600; 
-                                opacity: 0.9; margin-bottom: 0.3rem;'>📈 Avg Match Score</div>
-                    <div style='color: white; font-size: 2rem; font-weight: 800;'>{avg_score}%</div>
+                    <div style='color: white; font-size: 0.85rem; font-weight: 600; 
+                                opacity: 0.9; margin-bottom: 0.5rem;'>📈 Avg Match Score</div>
+                    <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{avg_score}%</div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1138,59 +1214,81 @@ def show_main_app():
         if not current_job:
             st.error("Job not found")
             st.session_state.selected_job_id = None
+            st.rerun()
+        
+        # Get current navigation selection
+        current_nav = st.session_state.get("job_nav_selection", "📈 Analytics")
+        
+        # Show content based on sidebar navigation
+        if current_nav == "📈 Analytics":
+            # ANALYTICS VIEW - SHOW 4 CHARTS
             
-        
-        # Job title header
-        st.markdown(
-            f"""
-            <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                        padding: 1.2rem; border-radius: 12px; margin-bottom: 1rem; 
-                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);'>
-                <h2 style='color: white; margin: 0; font-size: 1.5rem; font-weight: 700;'>
-                    {current_job.get('role', current_job.get('job_title', 'Job Details'))}
-                </h2>
-                <p style='color: rgba(255,255,255,0.9); margin-top: 0.3rem; font-size: 0.9rem;'>
-                    {current_job.get('company', 'Company')} • {current_job.get('location', 'Location')}
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        
-        # Navigation tabs
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview & Candidates", "📤 Upload Resumes", "📈 Analytics", "⚙️ Job Settings"])
-        
-        # TAB 1: Overview & Candidates (Results)
-        with tab1:
-            st.markdown("### 📊 All Candidates")
-            
-            # Get evaluations for this job
-            evaluations = get_evaluations_by_jd_and_tier(
-                st.session_state.selected_job_id, tier=None, limit=100, org_id=org_id
+            # Job title header at the top
+            st.markdown(
+                f"""
+                <div style='background: white; padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 0.8rem; 
+                            box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #667eea;'>
+                    <h4 style='color: #1a1a1a; margin: 0; font-size: 0.95rem; font-weight: 600;'>
+                        📋 {current_job.get('role', current_job.get('job_title', 'Job Details'))}
+                    </h4>
+                    <p style='color: #888; margin: 0.2rem 0 0 0; font-size: 0.8rem;'>
+                        {current_job.get('company', 'Company')} • {current_job.get('location', 'Location')}
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True
             )
             
-            total_candidates = len(evaluations)
+            # Show 3-card stats
+            st.markdown("#### 📊 Overview")
             
-            # Filter controls
-            col_filter, col_count = st.columns([2, 1])
+            # Get stats for this specific job
+            job_resumes = get_resumes_by_jd(st.session_state.selected_job_id, org_id=org_id)
+            job_evaluations = get_evaluations_by_jd_and_tier(st.session_state.selected_job_id, tier=None, limit=1000, org_id=org_id)
             
-            with col_filter:
-                tier_filter = st.selectbox(
-                    "Filter by tier",
-                    ["ALL", "TOP", "BEST", "MODERATE", "LOW", "VERY_LOW"],
-                    key="candidates_tier_filter"
-                )
+            total_job_resumes = len(job_resumes)
+            total_evaluated = len(job_evaluations)
+            avg_job_score = sum([ev.get("overall_score", 0) for ev in job_evaluations]) / len(job_evaluations) if job_evaluations else 0
             
-            with col_count:
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
                 st.markdown(
                     f"""
-                    <div style='background: #e3f2fd; padding: 1rem; border-radius: 10px; text-align: center;'>
-                        <span style='color: #1976d2; font-weight: 700; font-size: 1.2rem;'>
-                            {total_candidates}
-                        </span>
-                        <span style='color: #1976d2; font-size: 0.9rem; margin-left: 0.3rem;'>
-                            candidates total
-                        </span>
+                    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                padding: 1.5rem; border-radius: 12px; text-align: center; 
+                                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);'>
+                        <div style='color: white; font-size: 0.85rem; font-weight: 600; 
+                                    opacity: 0.9; margin-bottom: 0.5rem;'>📄 Total Resumes</div>
+                        <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{total_job_resumes}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            with col2:
+                st.markdown(
+                    f"""
+                    <div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+                                padding: 1.5rem; border-radius: 12px; text-align: center; 
+                                box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);'>
+                        <div style='color: white; font-size: 0.85rem; font-weight: 600; 
+                                    opacity: 0.9; margin-bottom: 0.5rem;'>✅ Evaluated</div>
+                        <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{total_evaluated}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            with col3:
+                st.markdown(
+                    f"""
+                    <div style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
+                                padding: 1.5rem; border-radius: 12px; text-align: center; 
+                                box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);'>
+                        <div style='color: white; font-size: 0.85rem; font-weight: 600; 
+                                    opacity: 0.9; margin-bottom: 0.5rem;'>📈 Avg Score</div>
+                        <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{avg_job_score:.1f}%</div>
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -1198,204 +1296,7 @@ def show_main_app():
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # Filter evaluations
-            if tier_filter != "ALL":
-                evaluations = [ev for ev in evaluations if ev.get("candidate_tier") == tier_filter]
-            
-            # Display candidates as cards
-            if evaluations:
-                for idx, ev in enumerate(evaluations, 1):
-                    # Tier colors and status
-                    tier_colors = {
-                        "TOP": ("#10b981", "shortlisted"),
-                        "BEST": ("#3b82f6", "shortlisted"),
-                        "MODERATE": ("#f59e0b", "pending"),
-                        "LOW": ("#ef4444", "pending"),
-                        "VERY_LOW": ("#991b1b", "rejected")
-                    }
-                    tier_color, status = tier_colors.get(ev.get('candidate_tier', 'MODERATE'), ("#6b7280", "pending"))
-                    
-                    # Get candidate email and experience from parsed resume
-                    candidate_email = "N/A"
-                    candidate_experience = "N/A"
-                    candidate_skills = []
-                    
-                    # Try to get resume data
-                    resume_id = ev.get("resume_id")
-                    if resume_id:
-                        resumes = get_resumes_by_jd(st.session_state.selected_job_id, org_id=org_id)
-                        candidate_resume = next((r for r in resumes if r.get("resume_id") == resume_id), None)
-                        
-                        if candidate_resume and "parsed_resume_json" in candidate_resume:
-                            parsed_resume = candidate_resume["parsed_resume_json"]
-                            candidate_email = parsed_resume.get("email", "N/A")
-                            
-                            # Get experience
-                            exp_years = parsed_resume.get("total_experience_years", 0)
-                            if exp_years:
-                                candidate_experience = f"{exp_years}yr experience"
-                            
-                            # Extract skills from skills_with_context
-                            skills_data = parsed_resume.get("skills_with_context", [])
-                            if skills_data:
-                                # Get top 6 skills
-                                for skill_item in skills_data[:6]:
-                                    if isinstance(skill_item, dict) and "skill" in skill_item:
-                                        candidate_skills.append(skill_item["skill"])
-                                    elif isinstance(skill_item, str):
-                                        candidate_skills.append(skill_item)
-                    
-                    match_percentage = int(ev.get('overall_score', 0))
-                    
-                    # Create a container for each candidate
-                    with st.container():
-                        # Use columns for layout - more compact
-                        col_avatar, col_info, col_score = st.columns([0.4, 3.2, 0.7])
-                        
-                        with col_avatar:
-                            st.markdown(
-                                """
-                                <div style='width: 45px; height: 45px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                                            border-radius: 50%; display: flex; align-items: center; justify-content: center;'>
-                                    <span style='font-size: 1.3rem;'>👤</span>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-                        
-                        with col_info:
-                            st.markdown(f"**{ev.get('candidate_name', 'Unknown')}**")
-                            st.caption(f"{candidate_email} • {candidate_experience}")
-                            
-                            # Display skills as badges - more compact
-                            if candidate_skills:
-                                skills_html = " ".join([
-                                    f"<span style='background: #f0f0f0; padding: 0.25rem 0.7rem; "
-                                    f"border-radius: 15px; font-size: 0.75rem; margin-right: 0.3rem; "
-                                    f"display: inline-block; margin-bottom: 0.3rem; color: #333; font-weight: 500;'>{skill}</span>"
-                                    for skill in candidate_skills
-                                ])
-                                st.markdown(skills_html, unsafe_allow_html=True)
-                        
-                        with col_score:
-                            st.markdown(
-                                f"""
-                                <div style='text-align: center; background: {tier_color}; color: white; 
-                                            padding: 0.6rem 0.8rem; border-radius: 10px;'>
-                                    <div style='font-size: 1.2rem; font-weight: 800;'>{match_percentage}%</div>
-                                    <div style='font-size: 0.65rem; opacity: 0.9;'>Match</div>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-                        
-                        # Expander for detailed breakdown - more compact
-                        with st.expander(f"📊 View Detailed Scores", expanded=False):
-                            
-                            for cat, score in ev.get("category_scores", {}).items():
-                                col_cat, col_score_detail = st.columns([3, 1])
-                                
-                                with col_cat:
-                                    st.markdown(f"**{cat}**")
-                                    if "category_explanations" in ev:
-                                        st.caption(ev["category_explanations"].get(cat, ""))
-                                
-                                with col_score_detail:
-                                    score_val = score if isinstance(score, (int, float)) else 0
-                                    score_color = "#10b981" if score_val >= 8 else "#3b82f6" if score_val >= 6 else "#f59e0b" if score_val >= 4 else "#ef4444"
-                                    st.markdown(
-                                        f"""
-                                        <div style='background: {score_color}; color: white; padding: 0.4rem; 
-                                                    border-radius: 6px; text-align: center; font-weight: 700; font-size: 0.9rem;'>
-                                            {score_val:.1f}
-                                        </div>
-                                        """,
-                                        unsafe_allow_html=True
-                                    )
-                        
-                        st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
-            else:
-                st.markdown(
-                    """
-                    <div style='text-align: center; padding: 3rem; background: #f5f5f5; 
-                                border-radius: 15px; border: 2px dashed #ccc;'>
-                        <div style='font-size: 4rem; margin-bottom: 1rem;'>📭</div>
-                        <h3 style='color: #666; margin: 0;'>No Candidates Yet</h3>
-                        <p style='color: #888; margin-top: 0.5rem;'>Upload resumes to see candidates here</p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-        
-        # TAB 2: Upload Resumes
-        with tab2:
-            st.markdown("### 📤 Upload & Evaluate Resumes")
-            st.markdown("Upload multiple resumes (up to 10). They will be parsed and evaluated automatically.")
-            
-            resume_files = st.file_uploader(
-                "Upload resume files",
-                type=["pdf", "docx", "txt"],
-                accept_multiple_files=True,
-                key="job_resume_uploader",
-                help="Select one or more resume files (Max 200MB per file)"
-            )
-            
-            if resume_files:
-                st.info(f"📊 **{len(resume_files)} file(s) selected**")
-                
-                if st.button("🚀 Parse & Evaluate All Resumes", type="primary", use_container_width=True):
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
-                    for idx, file in enumerate(resume_files):
-                        status_text.markdown(f"**Processing ({idx+1}/{len(resume_files)}):** `{file.name}`")
-                        
-                        # Parse resume
-                        raw_text = extract_text(file)
-                        parsed_resume = parse_resume(raw_text)
-                        resume_id = str(uuid.uuid4())
-                        candidate_name = parsed_resume.get("candidate_name", "Unknown")
-                        
-                        # Save resume
-                        save_resume({
-                            "resume_id": resume_id,
-                            "candidate_name": candidate_name,
-                            "jd_id": st.session_state.selected_job_id,
-                            "parsed_resume_json": parsed_resume,
-                            "created_at": datetime.utcnow()
-                        }, org_id=org_id)
-                        
-                        # Evaluate immediately
-                        result = score_resume(
-                            current_job["parsed_jd_json"],
-                            parsed_resume
-                        )
-                        
-                        save_evaluation({
-                            "jd_id": st.session_state.selected_job_id,
-                            "resume_id": resume_id,
-                            "candidate_name": candidate_name,
-                            "category_scores": result["category_scores"],
-                            "category_explanations": result["category_explanations"],
-                            "overall_score": result["final_score"],
-                            "candidate_tier": assign_candidate_tier(result["final_score"]),
-                            "evaluated_at": datetime.utcnow()
-                        }, org_id=org_id)
-                        
-                        progress_bar.progress((idx + 1) / len(resume_files))
-                    
-                    status_text.empty()
-                    progress_bar.empty()
-                    st.success(f"✅ Successfully processed and evaluated {len(resume_files)} resume(s)!")
-                    st.toast(f"✅ {len(resume_files)} candidate(s) evaluated!", icon="🎉")
-                    
-                    # Refresh to show new candidates
-                    st.balloons()
-        
-        # TAB 3: Analytics
-        with tab3:
-            st.markdown("### 📈 Analytics Dashboard")
-            st.markdown("Comprehensive insights into candidate evaluation metrics")
+            st.markdown("#### 📈 Analytics Dashboard")
             
             # Get all evaluations and resumes for this job
             evaluations = get_evaluations_by_jd_and_tier(
@@ -1771,9 +1672,293 @@ def show_main_app():
                     total_evaluated = len(evaluations)
                     st.metric("Total Evaluated", total_evaluated, delta=None)
         
-        # TAB 4: Job Settings
-        with tab4:
-            st.markdown("### ⚙️ Job Settings")
+        elif current_nav == "📤 Upload Resumes":
+            # UPLOAD RESUMES VIEW
+            
+            # Job title header at the top
+            st.markdown(
+                f"""
+                <div style='background: white; padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 0.8rem; 
+                            box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #667eea;'>
+                    <h4 style='color: #1a1a1a; margin: 0; font-size: 0.95rem; font-weight: 600;'>
+                        📋 {current_job.get('role', current_job.get('job_title', 'Job Details'))}
+                    </h4>
+                    <p style='color: #888; margin: 0.2rem 0 0 0; font-size: 0.8rem;'>
+                        {current_job.get('company', 'Company')} • {current_job.get('location', 'Location')}
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+            
+            st.markdown("#### 📤 Upload & Evaluate Resumes")
+            st.markdown("Upload multiple resumes (up to 10). They will be parsed and evaluated automatically.")
+            
+            resume_files = st.file_uploader(
+                "Upload resume files",
+                type=["pdf", "docx", "txt"],
+                accept_multiple_files=True,
+                key="job_resume_uploader",
+                help="Select one or more resume files (Max 200MB per file)"
+            )
+            
+            if resume_files:
+                st.info(f"📊 **{len(resume_files)} file(s) selected**")
+                
+                if st.button("🚀 Parse & Evaluate All Resumes", type="primary", use_container_width=True):
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    for idx, file in enumerate(resume_files):
+                        status_text.markdown(f"**Processing ({idx+1}/{len(resume_files)}):** `{file.name}`")
+                        
+                        # Parse resume
+                        raw_text = extract_text(file)
+                        parsed_resume = parse_resume(raw_text)
+                        resume_id = str(uuid.uuid4())
+                        candidate_name = parsed_resume.get("candidate_name", "Unknown")
+                        
+                        # Save resume
+                        save_resume({
+                            "resume_id": resume_id,
+                            "candidate_name": candidate_name,
+                            "jd_id": st.session_state.selected_job_id,
+                            "parsed_resume_json": parsed_resume,
+                            "created_at": datetime.utcnow()
+                        }, org_id=org_id)
+                        
+                        # Evaluate immediately
+                        result = score_resume(
+                            current_job["parsed_jd_json"],
+                            parsed_resume
+                        )
+                        
+                        save_evaluation({
+                            "jd_id": st.session_state.selected_job_id,
+                            "resume_id": resume_id,
+                            "candidate_name": candidate_name,
+                            "category_scores": result["category_scores"],
+                            "category_explanations": result["category_explanations"],
+                            "overall_score": result["final_score"],
+                            "candidate_tier": assign_candidate_tier(result["final_score"]),
+                            "evaluated_at": datetime.utcnow()
+                        }, org_id=org_id)
+                        
+                        progress_bar.progress((idx + 1) / len(resume_files))
+                    
+                    status_text.empty()
+                    progress_bar.empty()
+                    st.success(f"✅ Successfully processed and evaluated {len(resume_files)} resume(s)!")
+                    st.toast(f"✅ {len(resume_files)} candidate(s) evaluated!", icon="🎉")
+                    
+                    # Refresh to show new candidates
+                    st.balloons()
+        
+        elif current_nav == "👥 Candidates":
+            # CANDIDATES VIEW - SHOW CANDIDATE LIST
+            
+            # Job title header at the top
+            st.markdown(
+                f"""
+                <div style='background: white; padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 0.8rem; 
+                            box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #667eea;'>
+                    <h4 style='color: #1a1a1a; margin: 0; font-size: 0.95rem; font-weight: 600;'>
+                        📋 {current_job.get('role', current_job.get('job_title', 'Job Details'))}
+                    </h4>
+                    <p style='color: #888; margin: 0.2rem 0 0 0; font-size: 0.8rem;'>
+                        {current_job.get('company', 'Company')} • {current_job.get('location', 'Location')}
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+            
+            st.markdown("#### 👥 All Candidates")
+            st.markdown("Comprehensive insights into candidate evaluation metrics")
+            
+            # Get evaluations for this job
+            evaluations = get_evaluations_by_jd_and_tier(
+                st.session_state.selected_job_id, tier=None, limit=100, org_id=org_id
+            )
+            
+            total_candidates = len(evaluations)
+            
+            # Filter controls
+            col_filter, col_count = st.columns([2, 1])
+            
+            with col_filter:
+                tier_filter = st.selectbox(
+                    "Filter by tier",
+                    ["ALL", "TOP", "BEST", "MODERATE", "LOW", "VERY_LOW"],
+                    key="candidates_tier_filter"
+                )
+            
+            with col_count:
+                st.markdown(
+                    f"""
+                    <div style='background: #e3f2fd; padding: 1rem; border-radius: 10px; text-align: center;'>
+                        <span style='color: #1976d2; font-weight: 700; font-size: 1.2rem;'>
+                            {total_candidates}
+                        </span>
+                        <span style='color: #1976d2; font-size: 0.9rem; margin-left: 0.3rem;'>
+                            candidates total
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Filter evaluations
+            if tier_filter != "ALL":
+                evaluations = [ev for ev in evaluations if ev.get("candidate_tier") == tier_filter]
+            
+            # Display candidates as cards
+            if evaluations:
+                for idx, ev in enumerate(evaluations, 1):
+                    # Tier colors and status
+                    tier_colors = {
+                        "TOP": ("#10b981", "shortlisted"),
+                        "BEST": ("#3b82f6", "shortlisted"),
+                        "MODERATE": ("#f59e0b", "pending"),
+                        "LOW": ("#ef4444", "pending"),
+                        "VERY_LOW": ("#991b1b", "rejected")
+                    }
+                    tier_color, status = tier_colors.get(ev.get('candidate_tier', 'MODERATE'), ("#6b7280", "pending"))
+                    
+                    # Get candidate email and experience from parsed resume
+                    candidate_email = "N/A"
+                    candidate_experience = "N/A"
+                    candidate_skills = []
+                    
+                    # Try to get resume data
+                    resume_id = ev.get("resume_id")
+                    if resume_id:
+                        resumes = get_resumes_by_jd(st.session_state.selected_job_id, org_id=org_id)
+                        candidate_resume = next((r for r in resumes if r.get("resume_id") == resume_id), None)
+                        
+                        if candidate_resume and "parsed_resume_json" in candidate_resume:
+                            parsed_resume = candidate_resume["parsed_resume_json"]
+                            candidate_email = parsed_resume.get("email", "N/A")
+                            
+                            # Get experience
+                            exp_years = parsed_resume.get("total_experience_years", 0)
+                            if exp_years:
+                                candidate_experience = f"{exp_years}yr experience"
+                            
+                            # Extract skills from skills_with_context
+                            skills_data = parsed_resume.get("skills_with_context", [])
+                            if skills_data:
+                                # Get top 6 skills
+                                for skill_item in skills_data[:6]:
+                                    if isinstance(skill_item, dict) and "skill" in skill_item:
+                                        candidate_skills.append(skill_item["skill"])
+                                    elif isinstance(skill_item, str):
+                                        candidate_skills.append(skill_item)
+                    
+                    match_percentage = int(ev.get('overall_score', 0))
+                    
+                    # Create a container for each candidate
+                    with st.container():
+                        # Use columns for layout - more compact
+                        col_avatar, col_info, col_score = st.columns([0.4, 3.2, 0.7])
+                        
+                        with col_avatar:
+                            st.markdown(
+                                """
+                                <div style='width: 45px; height: 45px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                            border-radius: 50%; display: flex; align-items: center; justify-content: center;'>
+                                    <span style='font-size: 1.3rem;'>👤</span>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                        
+                        with col_info:
+                            st.markdown(f"**{ev.get('candidate_name', 'Unknown')}**")
+                            st.caption(f"{candidate_email} • {candidate_experience}")
+                            
+                            # Display skills as badges - more compact
+                            if candidate_skills:
+                                skills_html = " ".join([
+                                    f"<span style='background: #f0f0f0; padding: 0.25rem 0.7rem; "
+                                    f"border-radius: 15px; font-size: 0.75rem; margin-right: 0.3rem; "
+                                    f"display: inline-block; margin-bottom: 0.3rem; color: #333; font-weight: 500;'>{skill}</span>"
+                                    for skill in candidate_skills
+                                ])
+                                st.markdown(skills_html, unsafe_allow_html=True)
+                        
+                        with col_score:
+                            st.markdown(
+                                f"""
+                                <div style='text-align: center; background: {tier_color}; color: white; 
+                                            padding: 0.6rem 0.8rem; border-radius: 10px;'>
+                                    <div style='font-size: 1.2rem; font-weight: 800;'>{match_percentage}%</div>
+                                    <div style='font-size: 0.65rem; opacity: 0.9;'>Match</div>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                        
+                        # Expander for detailed breakdown - more compact
+                        with st.expander(f"📊 View Detailed Scores", expanded=False):
+                            
+                            for cat, score in ev.get("category_scores", {}).items():
+                                col_cat, col_score_detail = st.columns([3, 1])
+                                
+                                with col_cat:
+                                    st.markdown(f"**{cat}**")
+                                    if "category_explanations" in ev:
+                                        st.caption(ev["category_explanations"].get(cat, ""))
+                                
+                                with col_score_detail:
+                                    score_val = score if isinstance(score, (int, float)) else 0
+                                    score_color = "#10b981" if score_val >= 8 else "#3b82f6" if score_val >= 6 else "#f59e0b" if score_val >= 4 else "#ef4444"
+                                    st.markdown(
+                                        f"""
+                                        <div style='background: {score_color}; color: white; padding: 0.4rem; 
+                                                    border-radius: 6px; text-align: center; font-weight: 700; font-size: 0.9rem;'>
+                                            {score_val:.1f}
+                                        </div>
+                                        """,
+                                        unsafe_allow_html=True
+                                    )
+                        
+                        st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
+            else:
+                st.markdown(
+                    """
+                    <div style='text-align: center; padding: 3rem; background: #f5f5f5; 
+                                border-radius: 15px; border: 2px dashed #ccc;'>
+                        <div style='font-size: 4rem; margin-bottom: 1rem;'>📭</div>
+                        <h3 style='color: #666; margin: 0;'>No Candidates Yet</h3>
+                        <p style='color: #888; margin-top: 0.5rem;'>Upload resumes to see candidates here</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        
+        elif current_nav == "⚙️ Settings":
+            # JOB SETTINGS VIEW
+            
+            # Job title header at the top
+            st.markdown(
+                f"""
+                <div style='background: white; padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 0.8rem; 
+                            box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #667eea;'>
+                    <h4 style='color: #1a1a1a; margin: 0; font-size: 0.95rem; font-weight: 600;'>
+                        📋 {current_job.get('role', current_job.get('job_title', 'Job Details'))}
+                    </h4>
+                    <p style='color: #888; margin: 0.2rem 0 0 0; font-size: 0.8rem;'>
+                        {current_job.get('company', 'Company')} • {current_job.get('location', 'Location')}
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+            
+            st.markdown("#### ⚙️ Job Settings")
             st.markdown("Manage this job posting")
             
             st.markdown("<br>", unsafe_allow_html=True)
@@ -1898,12 +2083,7 @@ def show_main_app():
                         
             
             st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Back to Dashboard button at the bottom
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("← Back to Dashboard", key="back_to_dashboard", use_container_width=True, type="secondary"):
-            st.session_state.selected_job_id = None
-            st.rerun()
+
             
     
     # ===================================================== 
