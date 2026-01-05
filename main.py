@@ -562,15 +562,22 @@ def show_auth_page():
     """Display unified auth page with Login/Signup tabs"""
     
     # Initialize auth tab state based on current page
-    # Always sync with page state to ensure correct tab is shown
-    if st.session_state.get("page") == "signin":
-        if "auth_tab" not in st.session_state or st.session_state.auth_tab != "login":
+    # Only set if not already set or if page changed
+    if "auth_tab" not in st.session_state:
+        if st.session_state.get("page") == "signin":
             st.session_state.auth_tab = "login"
-    elif st.session_state.get("page") == "signup":
-        if "auth_tab" not in st.session_state or st.session_state.auth_tab != "signup":
+        elif st.session_state.get("page") == "signup":
             st.session_state.auth_tab = "signup"
-    elif "auth_tab" not in st.session_state:
-        st.session_state.auth_tab = "login"
+        else:
+            st.session_state.auth_tab = "login"
+    else:
+        # Sync with page only if page explicitly changed
+        if st.session_state.get("page") == "signin" and st.session_state.auth_tab == "signup":
+            # User navigated to signin page, switch to login
+            st.session_state.auth_tab = "login"
+        elif st.session_state.get("page") == "signup" and st.session_state.auth_tab == "login":
+            # User navigated to signup page, switch to signup
+            st.session_state.auth_tab = "signup"
     
     # Apply purple gradient background and styling
     st.markdown("""
@@ -732,7 +739,7 @@ def show_auth_page():
             signup_type = "primary" if st.session_state.auth_tab == "signup" else "secondary"
             signup_clicked = st.button("Signup", key="tab_signup", type=signup_type, use_container_width=True)
         
-        # Handle tab switching without rerun
+        # Handle tab switching - let Streamlit naturally rerun
         if login_clicked and st.session_state.auth_tab != "login":
             st.session_state.auth_tab = "login"
         if signup_clicked and st.session_state.auth_tab != "signup":
@@ -772,8 +779,10 @@ def show_auth_page():
                         # Clear login fields
                         st.session_state.login_email = ""
                         st.session_state.login_password = ""
+                        # Reset navigation to dashboard
+                        st.session_state.selected_job_id = None
+                        st.session_state.job_view_tab = "Overview"
                         st.success("Login successful!")
-                        
                     else:
                         st.error(result["message"])
         
@@ -810,6 +819,7 @@ def show_auth_page():
                         if result["success"]:
                             st.success("Account created successfully! Please login.")
                             st.session_state.auth_tab = "login"
+                            st.session_state.page = "signin"
                         else:
                             st.error(result["message"])
         
@@ -921,6 +931,9 @@ def show_main_app():
             st.session_state.authenticated = False
             st.session_state.user = None
             st.session_state.page = "landing"
+            # Reset all navigation state
+            st.session_state.selected_job_id = None
+            st.session_state.job_view_tab = "Overview"
             
             
         
@@ -2427,15 +2440,9 @@ def show_main_app():
                     
                     for cat, score in ev["category_scores"].items():
                         # Score color based on value
-                        if score >= 8:
+                        if score >= 0:
                             score_color = "#10b981"
                             score_icon = "🟢"
-                        elif score >= 6:
-                            score_color = "#3b82f6"
-                            score_icon = "🔵"
-                        elif score >= 4:
-                            score_color = "#f59e0b"
-                            score_icon = "🟡"
                         else:
                             score_color = "#ef4444"
                             score_icon = "🔴"
