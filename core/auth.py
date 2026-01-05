@@ -42,10 +42,7 @@ def create_user(full_name: str, email: str, password: str, organization: str) ->
     if existing_user:
         return {"success": False, "message": "Email already registered", "user_id": None}
     
-    # Check if organization name already exists
-    existing_org = db.users.find_one({"organization": organization})
-    if existing_org:
-        return {"success": False, "message": "Organization name already taken", "user_id": None}
+    # Organization name can be reused - no uniqueness check
     
     user_id = str(uuid.uuid4())
     user_doc = {

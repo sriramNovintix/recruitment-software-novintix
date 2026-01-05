@@ -930,17 +930,17 @@ def show_main_app():
     
     db = init_db()
     user = st.session_state.user
-    org_id = user["user_id"]  # Using user_id as org_id
+    org_id = user["organization"]  # Using organization name as org_id for multi-user support
     
     # ---------------- SIDEBAR ----------------
     with st.sidebar:
-        # Logo/Brand Section with Organization name and user email
+        # Logo/Brand Section with Organization name and user email - reduced to 1/4th size
         st.markdown(
             f"""
-            <div style='text-align: center; padding: 1.5rem 0; margin-bottom: 1.5rem;'>
-                <div style='font-size: 3rem; margin-bottom: 0.5rem;'>🏢</div>
-                <h2 style='color: #667eea; margin: 0; font-size: 1.3rem;'>Novintix</h2>
-                <p style='color: #888; font-size: 0.85rem; margin-top: 0.3rem;'>{user['email']}</p>
+            <div style='text-align: center; padding: 0.8rem 0; margin-bottom: 0.8rem;'>
+                <div style='font-size: 1.5rem; margin-bottom: 0.2rem;'>🏢</div>
+                <h2 style='color: #667eea; margin: 0; font-size: 0.9rem;'>Novintix</h2>
+                <p style='color: #888; font-size: 0.7rem; margin-top: 0.2rem;'>{user['email']}</p>
             </div>
             """,
             unsafe_allow_html=True
@@ -1076,12 +1076,12 @@ def show_main_app():
         with col1:
             st.markdown(
                 f"""
-                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                <div style='background: white; 
                             padding: 1.5rem; border-radius: 12px; text-align: center; 
-                            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);'>
-                    <div style='color: white; font-size: 0.85rem; font-weight: 600; 
-                                opacity: 0.9; margin-bottom: 0.5rem;'>📄 Active Jobs</div>
-                    <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{total_jds}</div>
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e7eb;'>
+                    <div style='color: #667eea; font-size: 0.85rem; font-weight: 600; 
+                                margin-bottom: 0.5rem;'>📄 Active Jobs</div>
+                    <div style='color: #667eea; font-size: 2.5rem; font-weight: 800;'>{total_jds}</div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1090,12 +1090,12 @@ def show_main_app():
         with col2:
             st.markdown(
                 f"""
-                <div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+                <div style='background: white; 
                             padding: 1.5rem; border-radius: 12px; text-align: center; 
-                            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);'>
-                    <div style='color: white; font-size: 0.85rem; font-weight: 600; 
-                                opacity: 0.9; margin-bottom: 0.5rem;'>👥 Total Resumes</div>
-                    <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{total_resumes}</div>
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e7eb;'>
+                    <div style='color: #f093fb; font-size: 0.85rem; font-weight: 600; 
+                                margin-bottom: 0.5rem;'>👥 Total Resumes</div>
+                    <div style='color: #667eea; font-size: 2.5rem; font-weight: 800;'>{total_resumes}</div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1104,12 +1104,12 @@ def show_main_app():
         with col3:
             st.markdown(
                 f"""
-                <div style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
+                <div style='background: white; 
                             padding: 1.5rem; border-radius: 12px; text-align: center; 
-                            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);'>
-                    <div style='color: white; font-size: 0.85rem; font-weight: 600; 
-                                opacity: 0.9; margin-bottom: 0.5rem;'>📈 Avg Match Score</div>
-                    <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{avg_score}%</div>
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e7eb;'>
+                    <div style='color: #4facfe; font-size: 0.85rem; font-weight: 600; 
+                                margin-bottom: 0.5rem;'>📈 Avg Match Score</div>
+                    <div style='color: #667eea; font-size: 2.5rem; font-weight: 800;'>{avg_score}%</div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1255,12 +1255,12 @@ def show_main_app():
             with col1:
                 st.markdown(
                     f"""
-                    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    <div style='background: white; 
                                 padding: 1.5rem; border-radius: 12px; text-align: center; 
-                                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);'>
-                        <div style='color: white; font-size: 0.85rem; font-weight: 600; 
-                                    opacity: 0.9; margin-bottom: 0.5rem;'>📄 Total Resumes</div>
-                        <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{total_job_resumes}</div>
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e7eb;'>
+                        <div style='color: #667eea; font-size: 0.85rem; font-weight: 600; 
+                                    margin-bottom: 0.5rem;'>📄 Total Resumes</div>
+                        <div style='color: #667eea; font-size: 2.5rem; font-weight: 800;'>{total_job_resumes}</div>
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -1269,12 +1269,12 @@ def show_main_app():
             with col2:
                 st.markdown(
                     f"""
-                    <div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+                    <div style='background: white; 
                                 padding: 1.5rem; border-radius: 12px; text-align: center; 
-                                box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);'>
-                        <div style='color: white; font-size: 0.85rem; font-weight: 600; 
-                                    opacity: 0.9; margin-bottom: 0.5rem;'>✅ Evaluated</div>
-                        <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{total_evaluated}</div>
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e7eb;'>
+                        <div style='color: #f093fb; font-size: 0.85rem; font-weight: 600; 
+                                    margin-bottom: 0.5rem;'>✅ Evaluated</div>
+                        <div style='color: #f093fb; font-size: 2.5rem; font-weight: 800;'>{total_evaluated}</div>
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -1283,12 +1283,12 @@ def show_main_app():
             with col3:
                 st.markdown(
                     f"""
-                    <div style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
+                    <div style='background: white; 
                                 padding: 1.5rem; border-radius: 12px; text-align: center; 
-                                box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);'>
-                        <div style='color: white; font-size: 0.85rem; font-weight: 600; 
-                                    opacity: 0.9; margin-bottom: 0.5rem;'>📈 Avg Score</div>
-                        <div style='color: white; font-size: 2.5rem; font-weight: 800;'>{avg_job_score:.1f}%</div>
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e7eb;'>
+                        <div style='color: #4facfe; font-size: 0.85rem; font-weight: 600; 
+                                    margin-bottom: 0.5rem;'>📈 Avg Score</div>
+                        <div style='color: #4facfe; font-size: 2.5rem; font-weight: 800;'>{avg_job_score:.1f}%</div>
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -1859,9 +1859,9 @@ def show_main_app():
                     
                     match_percentage = int(ev.get('overall_score', 0))
                     
-                    # Create a container for each candidate
+                    # Display each candidate without card background
                     with st.container():
-                        # Use columns for layout - more compact
+                        # Use columns for layout
                         col_avatar, col_info, col_score = st.columns([0.4, 3.2, 0.7])
                         
                         with col_avatar:
@@ -1879,7 +1879,7 @@ def show_main_app():
                             st.markdown(f"**{ev.get('candidate_name', 'Unknown')}**")
                             st.caption(f"{candidate_email} • {candidate_experience}")
                             
-                            # Display skills as badges - more compact
+                            # Display skills as badges
                             if candidate_skills:
                                 skills_html = " ".join([
                                     f"<span style='background: #f0f0f0; padding: 0.25rem 0.7rem; "
@@ -1901,9 +1901,8 @@ def show_main_app():
                                 unsafe_allow_html=True
                             )
                         
-                        # Expander for detailed breakdown - more compact
-                        with st.expander(f"📊 View Detailed Scores", expanded=False):
-                            
+                        # Expander for detailed breakdown - INSIDE the card
+                        with st.expander("📊 View Detailed Scores", expanded=False):
                             for cat, score in ev.get("category_scores", {}).items():
                                 col_cat, col_score_detail = st.columns([3, 1])
                                 
@@ -1924,8 +1923,6 @@ def show_main_app():
                                         """,
                                         unsafe_allow_html=True
                                     )
-                        
-                        st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
             else:
                 st.markdown(
                     """
@@ -2072,6 +2069,7 @@ def show_main_app():
                                 # Reset state and go back to dashboard
                                 st.session_state.confirm_delete = False
                                 st.session_state.selected_job_id = None
+                                st.rerun()
                                 
                             else:
                                 st.error(result["message"])

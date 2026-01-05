@@ -1,22 +1,22 @@
-import json
 import os
 
 class ConfigManager:
-    _config = None  # class-level cache
+    """
+    Configuration manager that reads from environment variables only.
+    No config.json file needed.
+    """
+    
+    @staticmethod
+    def get(key, default=None):
+        """
+        Get a config value from environment variables.
+        
+        Args:
+            key: The environment variable name
+            default: Default value if not found
+            
+        Returns:
+            The environment variable value or default
+        """
+        return os.environ.get(key, default)
 
-    @classmethod
-    def load(cls, config_path="config.json"):
-        if cls._config is None:
-            if not os.path.exists(config_path):
-                raise FileNotFoundError(f"{config_path} not found")
-
-            with open(config_path, "r") as f:
-                cls._config = json.load(f)
-
-        return cls._config
-
-    @classmethod
-    def get(cls, key, default=None):
-        if cls._config is None:
-            cls.load()
-        return cls._config.get(key, default)
