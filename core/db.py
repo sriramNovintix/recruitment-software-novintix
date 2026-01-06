@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from pymongo import MongoClient, DESCENDING
 from core.config_manager import ConfigManager
 
@@ -259,3 +260,140 @@ def delete_job_and_related_data(jd_id: str, org_id: str = None):
             "message": f"Error deleting job: {str(e)}"
         }
 
+
+
+# =====================
+# FILE FINGERPRINTS - PREVENT DUPLICATE UPLOADS
+# =====================
+import hashlib
+
+def compute_file_hash(file_content: bytes) -> str:
+    """
+    Compute SHA256 hash of file content.
+    
+    Args:
+        file_content: Raw bytes of the file
+        
+    Returns:
+        SHA256 hash string
+    """
+    return hashlib.sha256(file_content).hexdigest()
+
+
+def check_jd_duplicate(file_hash: str, org_id: str = None) -> dict:
+    """
+    Check if a JD file has already been uploaded by this organization.
+    
+    Args:
+        file_hash: SHA256 hash of the file
+        org_id: Organization ID
+        
+    Returns:
+        dict with 'is_duplicate' (bool) and 'existing_jd' (dict or None)
+    """
+    query = {
+        "file_hash": file_hash,
+        "file_type": "jd"
+    }
+    if org_id:
+        query["org_id"] = org_id
+    
+    existing = _db.file_fingerprints.find_one(query)
+    
+    if existing:
+        # Get the JD details
+        jd = _db.jds.find_one({"jd_id": existing["jd_id"]}, {"_id": 0})
+        return {
+            "is_duplicate": True,
+            "existing_jd": jd
+        }
+    
+    return {
+        "is_duplicate": False,
+        "existing_jd": None
+    }
+
+
+def check_resume_duplicate(file_hash: str, jd_id: str, org_id: str = None) -> dict:
+    """
+    Check if a resume file has already been uploaded for this specific job.
+    Same resume can be uploaded for different jobs.
+    
+    Args:
+        file_hash: SHA256 hash of the file
+        jd_id: Job ID to check against
+        org_id: Organization ID
+        
+    Returns:
+        dict with 'is_duplicate' (bool) and 'existing_resume' (dict or None)
+    """
+    query = {
+        "file_hash": file_hash,
+        "file_type": "resume",
+        "jd_id": jd_id
+    }
+    if org_id:
+        query["org_id"] = org_id
+    
+    existing = _db.file_fingerprints.find_one(query)
+    
+    if existing:
+        # Get the resume details
+        resume = _db.resumes.find_one({"resume_id": existing["resume_id"]}, {"_id": 0})
+        return {
+            "is_duplicate": True,
+            "existing_resume": resume
+        }
+    
+    return {
+        "is_duplicate": False,
+        "existing_resume": None
+    }
+
+
+def save_jd_fingerprint(file_hash: str, jd_id: str, filename: str, org_id: str = None):
+    """
+    Save JD file fingerprint to prevent duplicate uploads.
+    
+    Args:
+        file_hash: SHA256 hash of the file
+        jd_id: Job ID
+        filename: Original filename
+        org_id: Organization ID
+    """
+    doc = {
+        "file_hash": file_hash,
+        "file_type": "jd",
+        "jd_id": jd_id,
+        "filename": filename,
+        "uploaded_at": datetime.utcnow()
+    }
+    if org_id:
+        doc["org_id"] = org_id
+    
+    _db.file_fingerprints.insert_one(doc)
+
+
+def save_resume_fingerprint(file_hash: str, resume_id: str, jd_id: str, filename: str, org_id: str = None):
+    """
+    Save resume file fingerprint to prevent duplicate uploads for the same job.
+    
+    Args:
+        file_hash: SHA256 hash of the file
+        resume_id: Resume ID
+        jd_id: Job ID
+        filename: Original filename
+        org_id: Organization ID
+    """
+    doc = {
+        "file_hash": file_hash,
+        "file_type": "resume",
+        "resume_id": resume_id,
+        "jd_id": jd_id,
+        "filename": filename,
+        "uploaded_at": datetime.utcnow()
+    }
+    if org_id:
+        doc["org_id"] = org_id
+    
+    _db.file_fingerprints.insert_one(doc)

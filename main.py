@@ -848,7 +848,9 @@ def show_main_app():
         get_jds, get_resumes_by_jd, get_evaluations_by_jd,
         get_unreviewed_resumes_by_jd, get_evaluations_by_jd_and_tier,
         mark_resume_reviewed, get_jd_by_title, get_total_resumes_count,
-        get_average_match_score, get_job_stats, delete_job_and_related_data
+        get_average_match_score, get_job_stats, delete_job_and_related_data,
+        compute_file_hash, check_jd_duplicate, check_resume_duplicate,
+        save_jd_fingerprint, save_resume_fingerprint
     )
     from core.utils import extract_text
     from core.jd_parser import parse_jd
@@ -1709,50 +1711,80 @@ def show_main_app():
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     
+                    processed_count = 0
+                    skipped_count = 0
+                    
                     for idx, file in enumerate(resume_files):
                         status_text.markdown(f"**Processing ({idx+1}/{len(resume_files)}):** `{file.name}`")
                         
-                        # Parse resume
-                        raw_text = extract_text(file)
-                        parsed_resume = parse_resume(raw_text)
-                        resume_id = str(uuid.uuid4())
-                        candidate_name = parsed_resume.get("candidate_name", "Unknown")
+                        # Read file content and compute hash
+                        file.seek(0)
+                        file_content = file.read()
+                        file_hash = compute_file_hash(file_content)
                         
-                        # Save resume
-                        save_resume({
-                            "resume_id": resume_id,
-                            "candidate_name": candidate_name,
-                            "jd_id": st.session_state.selected_job_id,
-                            "parsed_resume_json": parsed_resume,
-                            "created_at": datetime.utcnow()
-                        }, org_id=org_id)
+                        # Check if this resume was already uploaded for THIS job
+                        duplicate_check = check_resume_duplicate(file_hash, st.session_state.selected_job_id, org_id=org_id)
                         
-                        # Evaluate immediately
-                        result = score_resume(
-                            current_job["parsed_jd_json"],
-                            parsed_resume
-                        )
-                        
-                        save_evaluation({
-                            "jd_id": st.session_state.selected_job_id,
-                            "resume_id": resume_id,
-                            "candidate_name": candidate_name,
-                            "category_scores": result["category_scores"],
-                            "category_explanations": result["category_explanations"],
-                            "overall_score": result["final_score"],
-                            "candidate_tier": assign_candidate_tier(result["final_score"]),
-                            "evaluated_at": datetime.utcnow()
-                        }, org_id=org_id)
+                        if duplicate_check["is_duplicate"]:
+                            existing = duplicate_check["existing_resume"]
+                            status_text.markdown(f"⚠️ **Skipped ({idx+1}/{len(resume_files)}):** `{file.name}` - Already uploaded as '{existing.get('candidate_name', 'Unknown')}'")
+                            skipped_count += 1
+                        else:
+                            # Reset file pointer for text extraction
+                            file.seek(0)
+                            
+                            # Parse resume
+                            raw_text = extract_text(file)
+                            parsed_resume = parse_resume(raw_text)
+                            resume_id = str(uuid.uuid4())
+                            candidate_name = parsed_resume.get("candidate_name", "Unknown")
+                            
+                            # Save resume
+                            save_resume({
+                                "resume_id": resume_id,
+                                "candidate_name": candidate_name,
+                                "jd_id": st.session_state.selected_job_id,
+                                "parsed_resume_json": parsed_resume,
+                                "created_at": datetime.utcnow()
+                            }, org_id=org_id)
+                            
+                            # Save file fingerprint
+                            save_resume_fingerprint(file_hash, resume_id, st.session_state.selected_job_id, file.name, org_id=org_id)
+                            
+                            # Evaluate immediately
+                            result = score_resume(
+                                current_job["parsed_jd_json"],
+                                parsed_resume
+                            )
+                            
+                            save_evaluation({
+                                "jd_id": st.session_state.selected_job_id,
+                                "resume_id": resume_id,
+                                "candidate_name": candidate_name,
+                                "category_scores": result["category_scores"],
+                                "category_explanations": result["category_explanations"],
+                                "overall_score": result["final_score"],
+                                "candidate_tier": assign_candidate_tier(result["final_score"]),
+                                "evaluated_at": datetime.utcnow()
+                            }, org_id=org_id)
+                            
+                            processed_count += 1
                         
                         progress_bar.progress((idx + 1) / len(resume_files))
                     
                     status_text.empty()
                     progress_bar.empty()
-                    st.success(f"✅ Successfully processed and evaluated {len(resume_files)} resume(s)!")
-                    st.toast(f"✅ {len(resume_files)} candidate(s) evaluated!", icon="🎉")
+                    
+                    if processed_count > 0:
+                        st.success(f"✅ Successfully processed {processed_count} resume(s)!")
+                        st.toast(f"✅ {processed_count} candidate(s) evaluated!", icon="🎉")
+                    
+                    if skipped_count > 0:
+                        st.warning(f"⚠️ Skipped {skipped_count} duplicate resume(s)")
                     
                     # Refresh to show new candidates
-                    st.balloons()
+                    if processed_count > 0:
+                        st.balloons()
         
         elif current_nav == "👥 Candidates":
             # CANDIDATES VIEW - SHOW CANDIDATE LIST
@@ -2202,35 +2234,52 @@ def show_main_app():
                     else:
                         with st.spinner("🔄 Processing job description..."):
                             try:
-                                # Extract and parse JD
-                                raw_text = extract_text(jd_file)
-                                parsed_jd = parse_jd(raw_text)
+                                # Read file content and compute hash
+                                jd_file.seek(0)  # Reset file pointer
+                                file_content = jd_file.read()
+                                file_hash = compute_file_hash(file_content)
                                 
-                                # Override role with user-provided job title
-                                parsed_jd["role"] = job_title
-                                
-                                # Set location (default to Coimbatore if not provided)
-                                final_location = location.strip() if location and location.strip() else "Coimbatore"
-                                parsed_jd["location"] = final_location
-                                
-                                # Save to database with job_title and location at top level
-                                jd_id = str(uuid.uuid4())
-                                save_jd({
-                                    "jd_id": jd_id,
-                                    "job_title": job_title,  # Top level field
-                                    "role": job_title,
-                                    "company": company,
-                                    "location": final_location,  # Top level field
-                                    "parsed_jd_json": parsed_jd,
-                                    "created_at": datetime.utcnow()
-                                }, org_id=org_id)
-                                
-                                st.success(f"✅ Job '{job_title}' created successfully!")
-                                st.toast(f"✅ Job '{job_title}' created!", icon="🎉")
-                                
-                                # Show parsed details in expander
-                                with st.expander("📄 View Parsed Job Details"):
-                                    st.json(parsed_jd)
+                                # Check if this exact JD file was already uploaded
+                                duplicate_check = check_jd_duplicate(file_hash, org_id=org_id)
+                                if duplicate_check["is_duplicate"]:
+                                    existing = duplicate_check["existing_jd"]
+                                    st.error(f"❌ This JD file has already been uploaded as '{existing.get('role', 'Unknown Job')}'")
+                                else:
+                                    # Reset file pointer for text extraction
+                                    jd_file.seek(0)
+                                    
+                                    # Extract and parse JD
+                                    raw_text = extract_text(jd_file)
+                                    parsed_jd = parse_jd(raw_text)
+                                    
+                                    # Override role with user-provided job title
+                                    parsed_jd["role"] = job_title
+                                    
+                                    # Set location (default to Coimbatore if not provided)
+                                    final_location = location.strip() if location and location.strip() else "Coimbatore"
+                                    parsed_jd["location"] = final_location
+                                    
+                                    # Save to database with job_title and location at top level
+                                    jd_id = str(uuid.uuid4())
+                                    save_jd({
+                                        "jd_id": jd_id,
+                                        "job_title": job_title,  # Top level field
+                                        "role": job_title,
+                                        "company": company,
+                                        "location": final_location,  # Top level field
+                                        "parsed_jd_json": parsed_jd,
+                                        "created_at": datetime.utcnow()
+                                    }, org_id=org_id)
+                                    
+                                    # Save file fingerprint
+                                    save_jd_fingerprint(file_hash, jd_id, jd_file.name, org_id=org_id)
+                                    
+                                    st.success(f"✅ Job '{job_title}' created successfully!")
+                                    st.toast(f"✅ Job '{job_title}' created!", icon="🎉")
+                                    
+                                    # Show parsed details in expander
+                                    with st.expander("📄 View Parsed Job Details"):
+                                        st.json(parsed_jd)
                                 
                             except Exception as e:
                                 st.error(f"❌ Error processing job description: {str(e)}")
