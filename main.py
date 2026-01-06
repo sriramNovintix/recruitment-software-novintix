@@ -19,12 +19,14 @@ st.set_page_config(
 )
 
 def load_landing_css():
+    """Load landing page CSS with cache busting"""
+    # Add unique key to force CSS reload in deployment
     st.markdown("""
-    <style>
+    <style data-page="landing">
         /* Hide Streamlit default elements for landing page */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
+        #MainMenu {visibility: hidden !important;}
+        footer {visibility: hidden !important;}
+        header {visibility: hidden !important;}
         
         /* Remove default Streamlit padding/margin */
         .block-container {
@@ -34,70 +36,70 @@ def load_landing_css():
         
         /* Reset and base styles */
         .stApp {
-            background: #ffffff;
+            background: #ffffff !important;
         }
         
         /* Custom fonts */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         
         * {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', sans-serif !important;
         }
         
         /* Navigation Bar - Keep it fixed */
         .navbar {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            padding: 1rem 4rem;
-            background: white;
-            border-bottom: 1px solid #eee;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            height: 70px;
+            display: grid !important;
+            grid-template-columns: 1fr auto 1fr !important;
+            align-items: center !important;
+            padding: 1rem 4rem !important;
+            background: white !important;
+            border-bottom: 1px solid #eee !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 1000 !important;
+            height: 70px !important;
         }
         
         .nav-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1a1a1a;
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+            color: #1a1a1a !important;
         }
         
         .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-            justify-content: center;
+            display: flex !important;
+            gap: 2rem !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
         
         .nav-link {
-            color: #666;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: color 0.2s;
-            cursor: pointer;
+            color: #666 !important;
+            text-decoration: none !important;
+            font-weight: 500 !important;
+            font-size: 0.95rem !important;
+            transition: color 0.2s !important;
+            cursor: pointer !important;
         }
         
         .nav-link:hover {
-            color: #3b82f6;
+            color: #3b82f6 !important;
         }
         
         .nav-buttons {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            justify-self: end;
+            display: flex !important;
+            gap: 1rem !important;
+            align-items: center !important;
+            justify-self: end !important;
         }
         
         /* Hero Section */
         .hero-section {
-            text-align: center;
-            padding: 4rem 2rem 2rem;
-            background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%);
+            text-align: center !important;
+            padding: 4rem 2rem 2rem !important;
+            background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%) !important;
             margin-top: 70px;
         }
         
@@ -464,14 +466,26 @@ def load_landing_css():
 def show_landing_page():
     """Display the landing page"""
     
-    # Top navigation bar HTML - simple without buttons
+    # Add JavaScript for smooth scrolling
+    st.markdown("""
+    <script>
+        function scrollToSection(sectionId) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # Top navigation bar HTML - with working navigation
     st.markdown("""
     <!-- Navigation Bar -->
     <div class="navbar">
         <div class="nav-brand">TalentMatch</div>
         <div class="nav-links">
-            <span class="nav-link">Features</span>
-            <span class="nav-link">How It Works</span>
+            <a href="#" class="nav-link" style="text-decoration: none;">Features</a>
+            <a href="#how-it-works" class="nav-link" style="text-decoration: none;">How It Works</a>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -563,16 +577,16 @@ def show_auth_page():
     
     # Apply mild gradient background and styling
     st.markdown("""
-    <style>
+    <style data-page="auth">
         /* Mild gradient background */
         .stApp {
             background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%) !important;
-            min-height: 100vh;
+            min-height: 100vh !important;
         }
         
         /* Hide sidebar */
         [data-testid="stSidebar"] {
-            display: none;
+            display: none !important;
         }
         
         /* Hide default header background */
@@ -591,11 +605,11 @@ def show_auth_page():
 
         /* Auth box container */
         .auth-box {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem 1.8rem;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.12);
-            margin-top: 1rem;
+            background: white !important;
+            border-radius: 20px !important;
+            padding: 2rem 1.8rem !important;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.12) !important;
+            margin-top: 1rem !important;
         }
         
         /* Input styling */
@@ -803,7 +817,6 @@ def show_auth_page():
         """, unsafe_allow_html=True)
 
 
-
 def show_main_app():
     """Show the main application (importing from app.py logic)"""
     # Import app modules
@@ -826,7 +839,12 @@ def show_main_app():
     
     # Override landing page CSS to show sidebar
     st.markdown("""
-    <style>
+    <style data-page="dashboard">
+        /* Reset any landing/auth page styles */
+        .stApp {
+            background: #ffffff !important;
+        }
+        
         /* Show sidebar for main app */
         [data-testid="stSidebar"] {
             display: block !important;
@@ -845,7 +863,7 @@ def show_main_app():
         
         /* Ensure proper sidebar styling */
         section[data-testid="stSidebar"] {
-            background-color: #f8f9fa;
+            background-color: #f8f9fa !important;
         }
         
         /* Reduce main content heading sizes */
@@ -2674,6 +2692,8 @@ def show_main_app():
 # ========================
 # MAIN APP LOGIC
 # ========================
+# MAIN APP LOGIC
+# ========================
 def main():
     # Initialize session state
     if "page" not in st.session_state:
@@ -2682,9 +2702,6 @@ def main():
         st.session_state.authenticated = False
     if "user" not in st.session_state:
         st.session_state.user = None
-    
-    # Load CSS
-    load_landing_css()
     
     # Route to appropriate page
     if st.session_state.authenticated and st.session_state.user:
@@ -2701,8 +2718,12 @@ def main():
         else:
             show_main_app()
     elif st.session_state.page == "landing":
+        # Load landing CSS only for landing page
+        load_landing_css()
         show_landing_page()
     else:
+        # Load landing CSS for default page
+        load_landing_css()
         show_landing_page()
 
 
