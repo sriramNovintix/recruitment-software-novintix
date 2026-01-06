@@ -19,10 +19,8 @@ st.set_page_config(
 )
 
 def load_landing_css():
-    """Load landing page CSS with cache busting"""
-    # Add unique key to force CSS reload in deployment
     st.markdown("""
-    <style data-page="landing">
+    <style>
         /* Hide Streamlit default elements for landing page */
         #MainMenu {visibility: hidden !important;}
         footer {visibility: hidden !important;}
@@ -266,50 +264,50 @@ def load_landing_css():
         
         /* Auth page background */
         .auth-page-bg {
-            min-height: 100vh !important;
-            background: linear-gradient(135deg, #f5f7ff 0%, #e8f0fe 100%) !important;
-            padding: 2rem !important;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7ff 0%, #e8f0fe 100%);
+            padding: 2rem;
         }
         
         /* Auth container - white card */
         .auth-container {
-            max-width: 420px !important;
-            margin: 2rem auto !important;
-            padding: 2.5rem !important;
-            background: white !important;
-            border-radius: 16px !important;
-            box-shadow: 0 4px 25px rgba(0,0,0,0.08) !important;
+            max-width: 420px;
+            margin: 2rem auto;
+            padding: 2.5rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.08);
         }
         
         .auth-brand {
-            text-align: center !important;
-            font-size: 1.5rem !important;
-            font-weight: 700 !important;
-            color: #1a1a1a !important;
-            margin-bottom: 1.5rem !important;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 1.5rem;
         }
         
         .auth-title {
-            font-size: 1.5rem !important;
-            font-weight: 700 !important;
+            font-size: 1.5rem;
+            font-weight: 700;
             color: #1a1a1a !important;
-            text-align: center !important;
-            margin-bottom: 0.5rem !important;
+            text-align: center;
+            margin-bottom: 0.5rem;
         }
         
         .auth-subtitle {
             color: #888 !important;
-            text-align: center !important;
-            margin-bottom: 2rem !important;
-            font-size: 0.95rem !important;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
         }
         
         .form-label {
-            font-weight: 500 !important;
+            font-weight: 500;
             color: #333 !important;
-            font-size: 0.9rem !important;
-            margin-bottom: 0.5rem !important;
-            display: block !important;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            display: block;
         }
         
         /* Force all labels and text to be dark */
@@ -377,40 +375,40 @@ def load_landing_css():
         }
         
         .auth-link {
-            text-align: center !important;
-            margin-top: 1.5rem !important;
+            text-align: center;
+            margin-top: 1.5rem;
             color: #666 !important;
-            font-size: 0.9rem !important;
+            font-size: 0.9rem;
         }
         
         .auth-link a {
             color: #3b82f6 !important;
-            text-decoration: none !important;
-            font-weight: 500 !important;
+            text-decoration: none;
+            font-weight: 500;
         }
         
         .auth-link a:hover {
-            text-decoration: underline !important;
+            text-decoration: underline;
         }
         
         /* Override Streamlit button for auth pages */
         .stButton > button {
-            width: 100% !important;
+            width: 100%;
             background: #3b82f6 !important;
             color: white !important;
-            padding: 0.75rem 1.5rem !important;
-            border-radius: 10px !important;
-            font-weight: 600 !important;
-            font-size: 1rem !important;
-            border: none !important;
-            cursor: pointer !important;
-            transition: all 0.2s !important;
-            margin-top: 0.5rem !important;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
         }
         
         .stButton > button:hover {
             background: #2563eb !important;
-            transform: translateY(-1px) !important;
+            transform: translateY(-1px);
         }
         
         /* Bottom CTA buttons styling */
@@ -451,7 +449,7 @@ def load_landing_css():
         
         /* Hide sidebar on landing/auth pages */
         [data-testid="stSidebar"] {
-            display: none !important;
+            display: none;
         }
         
         /* Form styling */
@@ -480,19 +478,7 @@ def load_landing_css():
 def show_landing_page():
     """Display the landing page"""
     
-    # Add JavaScript for smooth scrolling
-    st.markdown("""
-    <script>
-        function scrollToSection(sectionId) {
-            const element = document.getElementById(sectionId);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
-    </script>
-    """, unsafe_allow_html=True)
-    
-    # Top navigation bar HTML - with working navigation
+    # Top navigation bar HTML - with working navigation links
     st.markdown("""
     <!-- Navigation Bar -->
     <div class="navbar">
@@ -591,16 +577,16 @@ def show_auth_page():
     
     # Apply mild gradient background and styling
     st.markdown("""
-    <style data-page="auth">
+    <style>
         /* Mild gradient background */
         .stApp {
             background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%) !important;
-            min-height: 100vh !important;
+            min-height: 100vh;
         }
         
         /* Hide sidebar */
         [data-testid="stSidebar"] {
-            display: none !important;
+            display: none;
         }
         
         /* Hide default header background */
@@ -619,11 +605,11 @@ def show_auth_page():
 
         /* Auth box container */
         .auth-box {
-            background: white !important;
-            border-radius: 20px !important;
-            padding: 2rem 1.8rem !important;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.12) !important;
-            margin-top: 1rem !important;
+            background: white;
+            border-radius: 20px;
+            padding: 2rem 1.8rem;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.12);
+            margin-top: 1rem;
         }
         
         /* Input styling */
@@ -668,8 +654,8 @@ def show_auth_page():
             font-weight: 600 !important;
             font-size: 1rem !important;
             border: none !important;
-            width: 100% !important;
-            margin-top: 1rem !important;
+            width: 100%;
+            margin-top: 1rem;
             transition: all 0.3s ease !important;
         }
         
@@ -702,7 +688,7 @@ def show_auth_page():
         
         .stButton > button[kind="primary"]:hover {
             background: #2563eb !important;
-            transform: translateY(-1px) !important;
+            transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
         }
         
@@ -831,6 +817,7 @@ def show_auth_page():
         """, unsafe_allow_html=True)
 
 
+
 def show_main_app():
     """Show the main application (importing from app.py logic)"""
     # Import app modules
@@ -853,12 +840,7 @@ def show_main_app():
     
     # Override landing page CSS to show sidebar
     st.markdown("""
-    <style data-page="dashboard">
-        /* Reset any landing/auth page styles */
-        .stApp {
-            background: #ffffff !important;
-        }
-        
+    <style>
         /* Show sidebar for main app */
         [data-testid="stSidebar"] {
             display: block !important;
@@ -877,7 +859,7 @@ def show_main_app():
         
         /* Ensure proper sidebar styling */
         section[data-testid="stSidebar"] {
-            background-color: #f8f9fa !important;
+            background-color: #f8f9fa;
         }
         
         /* Reduce main content heading sizes */
@@ -885,40 +867,24 @@ def show_main_app():
             font-size: 1.5rem !important;
             margin-top: 0.5rem !important;
             margin-bottom: 0.5rem !important;
-            color: #1a1a1a !important;
-            font-weight: 700 !important;
         }
         
         .main h2 {
             font-size: 1.3rem !important;
             margin-top: 0.5rem !important;
             margin-bottom: 0.5rem !important;
-            color: #1a1a1a !important;
-            font-weight: 700 !important;
         }
         
         .main h3 {
             font-size: 1.1rem !important;
             margin-top: 0.5rem !important;
             margin-bottom: 0.5rem !important;
-            color: #1a1a1a !important;
-            font-weight: 600 !important;
-        }
-        
-        .main h4 {
-            font-size: 0.95rem !important;
-            margin-top: 0.5rem !important;
-            margin-bottom: 0.5rem !important;
-            color: #1a1a1a !important;
-            font-weight: 600 !important;
         }
         
         /* Reduce padding in main content area */
         .main .block-container {
             padding-top: 2rem !important;
             padding-bottom: 1rem !important;
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
         }
         
         /* Disabled input text color fix for main app */
@@ -2722,8 +2688,6 @@ def show_main_app():
 # ========================
 # MAIN APP LOGIC
 # ========================
-# MAIN APP LOGIC
-# ========================
 def main():
     # Initialize session state
     if "page" not in st.session_state:
@@ -2732,6 +2696,9 @@ def main():
         st.session_state.authenticated = False
     if "user" not in st.session_state:
         st.session_state.user = None
+    
+    # Load CSS
+    load_landing_css()
     
     # Route to appropriate page
     if st.session_state.authenticated and st.session_state.user:
@@ -2748,12 +2715,8 @@ def main():
         else:
             show_main_app()
     elif st.session_state.page == "landing":
-        # Load landing CSS only for landing page
-        load_landing_css()
         show_landing_page()
     else:
-        # Load landing CSS for default page
-        load_landing_css()
         show_landing_page()
 
 
