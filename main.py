@@ -100,150 +100,164 @@ def load_landing_css():
             text-align: center !important;
             padding: 4rem 2rem 2rem !important;
             background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%) !important;
-            margin-top: 70px;
+            margin-top: 70px !important;
         }
         
         .hero-title {
-            font-size: 2.8rem;
-            font-weight: 800;
-            color: #1a1a1a;
-            margin-bottom: 1rem;
-            line-height: 1.2;
+            font-size: 2.8rem !important;
+            font-weight: 800 !important;
+            color: #1a1a1a !important;
+            margin-bottom: 1rem !important;
+            line-height: 1.2 !important;
+            display: block !important;
+            visibility: visible !important;
         }
         
         .hero-subtitle {
-            font-size: 1.1rem;
-            color: #666;
-            max-width: 600px;
-            margin: 0 auto 1.5rem;
-            line-height: 1.6;
+            font-size: 1.1rem !important;
+            color: #666 !important;
+            max-width: 600px !important;
+            margin: 0 auto 1.5rem !important;
+            line-height: 1.6 !important;
+            display: block !important;
+            visibility: visible !important;
         }
         
         .hero-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-bottom: 2rem;
+            display: flex !important;
+            gap: 1rem !important;
+            justify-content: center !important;
+            margin-bottom: 2rem !important;
         }
         
         .btn-primary {
-            background: #3b82f6;
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 1rem;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s;
-            text-decoration: none;
+            background: #3b82f6 !important;
+            color: white !important;
+            padding: 1rem 2rem !important;
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            border: none !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            transition: all 0.2s !important;
+            text-decoration: none !important;
         }
         
         .btn-primary:hover {
-            background: #2563eb;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+            background: #2563eb !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3) !important;
         }
         
         .btn-secondary {
-            background: white;
-            color: #333;
-            padding: 1rem 2rem;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 1rem;
-            border: 1px solid #ddd;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
+            background: white !important;
+            color: #333 !important;
+            padding: 1rem 2rem !important;
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            border: 1px solid #ddd !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+            text-decoration: none !important;
         }
         
         .btn-secondary:hover {
-            border-color: #3b82f6;
-            color: #3b82f6;
+            border-color: #3b82f6 !important;
+            color: #3b82f6 !important;
         }
         
         /* Stats Section */
         .stats-section {
-            display: flex;
-            justify-content: center;
-            gap: 4rem;
-            padding: 2rem 2rem;
-            border-top: 1px solid #eee;
-            border-bottom: 1px solid #eee;
+            display: flex !important;
+            justify-content: center !important;
+            gap: 4rem !important;
+            padding: 2rem 2rem !important;
+            border-top: 1px solid #eee !important;
+            border-bottom: 1px solid #eee !important;
         }
         
         .stat-item {
-            text-align: center;
+            text-align: center !important;
         }
         
         .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #3b82f6;
-            margin-bottom: 0.3rem;
+            font-size: 2rem !important;
+            font-weight: 700 !important;
+            color: #3b82f6 !important;
+            margin-bottom: 0.3rem !important;
+            display: block !important;
+            visibility: visible !important;
         }
         
         .stat-label {
-            color: #888;
-            font-size: 0.9rem;
+            color: #888 !important;
+            font-size: 0.9rem !important;
+            display: block !important;
+            visibility: visible !important;
         }
         
         /* How It Works Section */
         .hiw-section {
-            padding: 3rem 2rem;
-            text-align: center;
+            padding: 3rem 2rem !important;
+            text-align: center !important;
         }
         
         .hiw-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 2rem;
+            font-size: 1.8rem !important;
+            font-weight: 700 !important;
+            color: #1a1a1a !important;
+            margin-bottom: 2rem !important;
+            display: block !important;
+            visibility: visible !important;
         }
         
         .hiw-grid {
-            display: flex;
-            justify-content: center;
-            gap: 3rem;
-            flex-wrap: wrap;
-            max-width: 1000px;
-            margin: 0 auto;
+            display: flex !important;
+            justify-content: center !important;
+            gap: 3rem !important;
+            flex-wrap: wrap !important;
+            max-width: 1000px !important;
+            margin: 0 auto !important;
         }
         
         .hiw-card {
-            text-align: center;
-            padding: 1.5rem;
-            max-width: 200px;
+            text-align: center !important;
+            padding: 1.5rem !important;
+            max-width: 200px !important;
         }
         
         .hiw-icon {
-            width: 60px;
-            height: 60px;
-            background: #eff6ff;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 1.5rem;
-            color: #3b82f6;
+            width: 60px !important;
+            height: 60px !important;
+            background: #eff6ff !important;
+            border-radius: 15px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 auto 1rem !important;
+            font-size: 1.5rem !important;
+            color: #3b82f6 !important;
         }
         
         .hiw-card-title {
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
+            font-weight: 600 !important;
+            color: #1a1a1a !important;
+            margin-bottom: 0.5rem !important;
+            font-size: 1.1rem !important;
+            display: block !important;
+            visibility: visible !important;
         }
         
         .hiw-card-desc {
-            color: #888;
-            font-size: 0.9rem;
-            line-height: 1.5;
+            color: #888 !important;
+            font-size: 0.9rem !important;
+            line-height: 1.5 !important;
+            display: block !important;
+            visibility: visible !important;
         }
         
         /* ========================================
