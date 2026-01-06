@@ -841,6 +841,11 @@ def show_main_app():
     # Override landing page CSS to show sidebar
     st.markdown("""
     <style>
+        /* Main app background - mild gray */
+        .stApp {
+            background: #f8f9fa !important;
+        }
+        
         /* Show sidebar for main app */
         [data-testid="stSidebar"] {
             display: block !important;
@@ -855,11 +860,17 @@ def show_main_app():
         /* Allow main content to scroll */
         .main {
             overflow-y: auto !important;
+            background-color: #f8f9fa !important;
         }
         
-        /* Ensure proper sidebar styling */
+        /* Sidebar should be WHITE */
         section[data-testid="stSidebar"] {
-            background-color: #f8f9fa;
+            background-color: #ffffff !important;
+        }
+        
+        /* Main content block container - mild gray background */
+        .main .block-container {
+            background-color: #f8f9fa !important;
         }
         
         /* Reduce main content heading sizes */
@@ -900,6 +911,53 @@ def show_main_app():
         input[disabled] {
             color: #1a1a1a !important;
             -webkit-text-fill-color: #1a1a1a !important;
+        }
+        
+        /* Expander styling - View Detailed Scores box */
+        .streamlit-expanderHeader {
+            background-color: #f8f9fa !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            padding: 0.75rem 1rem !important;
+            font-weight: 600 !important;
+            color: #1a1a1a !important;
+        }
+        
+        .streamlit-expanderHeader:hover {
+            background-color: #f3f4f6 !important;
+            border-color: #d1d5db !important;
+        }
+        
+        .streamlit-expanderContent {
+            border: 1px solid #e5e7eb !important;
+            border-top: none !important;
+            border-radius: 0 0 8px 8px !important;
+            padding: 1rem !important;
+            background-color: #ffffff !important;
+        }
+        
+        /* Alternative selectors for expander */
+        [data-testid="stExpander"] {
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            background: #ffffff !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        [data-testid="stExpander"] > div {
+            background: #f8f9fa !important;
+        }
+        
+        [data-testid="stExpander"] summary {
+            background-color: #f8f9fa !important;
+            border-radius: 8px !important;
+            padding: 0.75rem 1rem !important;
+            font-weight: 600 !important;
+            color: #1a1a1a !important;
+        }
+        
+        [data-testid="stExpander"] summary:hover {
+            background-color: #f3f4f6 !important;
         }
     </style>
     """, unsafe_allow_html=True)
