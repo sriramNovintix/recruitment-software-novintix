@@ -266,50 +266,50 @@ def load_landing_css():
         
         /* Auth page background */
         .auth-page-bg {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #f5f7ff 0%, #e8f0fe 100%);
-            padding: 2rem;
+            min-height: 100vh !important;
+            background: linear-gradient(135deg, #f5f7ff 0%, #e8f0fe 100%) !important;
+            padding: 2rem !important;
         }
         
         /* Auth container - white card */
         .auth-container {
-            max-width: 420px;
-            margin: 2rem auto;
-            padding: 2.5rem;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+            max-width: 420px !important;
+            margin: 2rem auto !important;
+            padding: 2.5rem !important;
+            background: white !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.08) !important;
         }
         
         .auth-brand {
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 1.5rem;
+            text-align: center !important;
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+            color: #1a1a1a !important;
+            margin-bottom: 1.5rem !important;
         }
         
         .auth-title {
-            font-size: 1.5rem;
-            font-weight: 700;
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
             color: #1a1a1a !important;
-            text-align: center;
-            margin-bottom: 0.5rem;
+            text-align: center !important;
+            margin-bottom: 0.5rem !important;
         }
         
         .auth-subtitle {
             color: #888 !important;
-            text-align: center;
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
+            text-align: center !important;
+            margin-bottom: 2rem !important;
+            font-size: 0.95rem !important;
         }
         
         .form-label {
-            font-weight: 500;
+            font-weight: 500 !important;
             color: #333 !important;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            display: block;
+            font-size: 0.9rem !important;
+            margin-bottom: 0.5rem !important;
+            display: block !important;
         }
         
         /* Force all labels and text to be dark */
@@ -377,40 +377,40 @@ def load_landing_css():
         }
         
         .auth-link {
-            text-align: center;
-            margin-top: 1.5rem;
+            text-align: center !important;
+            margin-top: 1.5rem !important;
             color: #666 !important;
-            font-size: 0.9rem;
+            font-size: 0.9rem !important;
         }
         
         .auth-link a {
             color: #3b82f6 !important;
-            text-decoration: none;
-            font-weight: 500;
+            text-decoration: none !important;
+            font-weight: 500 !important;
         }
         
         .auth-link a:hover {
-            text-decoration: underline;
+            text-decoration: underline !important;
         }
         
         /* Override Streamlit button for auth pages */
         .stButton > button {
-            width: 100%;
+            width: 100% !important;
             background: #3b82f6 !important;
             color: white !important;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 1rem;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 0.5rem;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            border: none !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+            margin-top: 0.5rem !important;
         }
         
         .stButton > button:hover {
             background: #2563eb !important;
-            transform: translateY(-1px);
+            transform: translateY(-1px) !important;
         }
         
         /* Bottom CTA buttons styling */
@@ -451,7 +451,7 @@ def load_landing_css():
         
         /* Hide sidebar on landing/auth pages */
         [data-testid="stSidebar"] {
-            display: none;
+            display: none !important;
         }
         
         /* Form styling */
@@ -668,8 +668,8 @@ def show_auth_page():
             font-weight: 600 !important;
             font-size: 1rem !important;
             border: none !important;
-            width: 100%;
-            margin-top: 1rem;
+            width: 100% !important;
+            margin-top: 1rem !important;
             transition: all 0.3s ease !important;
         }
         
@@ -702,7 +702,7 @@ def show_auth_page():
         
         .stButton > button[kind="primary"]:hover {
             background: #2563eb !important;
-            transform: translateY(-1px);
+            transform: translateY(-1px) !important;
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
         }
         
@@ -885,24 +885,40 @@ def show_main_app():
             font-size: 1.5rem !important;
             margin-top: 0.5rem !important;
             margin-bottom: 0.5rem !important;
+            color: #1a1a1a !important;
+            font-weight: 700 !important;
         }
         
         .main h2 {
             font-size: 1.3rem !important;
             margin-top: 0.5rem !important;
             margin-bottom: 0.5rem !important;
+            color: #1a1a1a !important;
+            font-weight: 700 !important;
         }
         
         .main h3 {
             font-size: 1.1rem !important;
             margin-top: 0.5rem !important;
             margin-bottom: 0.5rem !important;
+            color: #1a1a1a !important;
+            font-weight: 600 !important;
+        }
+        
+        .main h4 {
+            font-size: 0.95rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+            color: #1a1a1a !important;
+            font-weight: 600 !important;
         }
         
         /* Reduce padding in main content area */
         .main .block-container {
             padding-top: 2rem !important;
             padding-bottom: 1rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
         }
         
         /* Disabled input text color fix for main app */
