@@ -921,6 +921,9 @@ def show_main_app():
             padding: 0.75rem 1rem !important;
             font-weight: 600 !important;
             color: #1a1a1a !important;
+            font-size: 0.95rem !important;
+            display: flex !important;
+            align-items: center !important;
         }
         
         .streamlit-expanderHeader:hover {
@@ -954,10 +957,60 @@ def show_main_app():
             padding: 0.75rem 1rem !important;
             font-weight: 600 !important;
             color: #1a1a1a !important;
+            font-size: 0.95rem !important;
+            display: flex !important;
+            align-items: center !important;
+            cursor: pointer !important;
         }
         
         [data-testid="stExpander"] summary:hover {
             background-color: #f3f4f6 !important;
+        }
+        
+        /* Fix expander text rendering */
+        [data-testid="stExpander"] summary p {
+            color: #1a1a1a !important;
+            font-size: 0.95rem !important;
+            margin: 0 !important;
+            display: inline !important;
+        }
+        
+        [data-testid="stExpander"] summary svg {
+            display: inline-block !important;
+            margin-right: 0.5rem !important;
+        }
+        
+        /* Ensure expander label is visible */
+        [data-testid="stExpander"] label {
+            color: #1a1a1a !important;
+            font-weight: 600 !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        
+        /* Fix for expander header content */
+        .st-emotion-cache-p5msec {
+            color: #1a1a1a !important;
+            font-size: 0.95rem !important;
+        }
+        
+        /* Streamlit expander details element */
+        details summary {
+            background-color: #f8f9fa !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            padding: 0.75rem 1rem !important;
+            color: #1a1a1a !important;
+            font-weight: 600 !important;
+            list-style: none !important;
+        }
+        
+        details summary::-webkit-details-marker {
+            display: none !important;
+        }
+        
+        details[open] summary {
+            border-radius: 8px 8px 0 0 !important;
         }
     </style>
     """, unsafe_allow_html=True)
