@@ -994,21 +994,32 @@ def show_main_app():
             font-size: 0.95rem !important;
         }
         
-        /* Hide garbled expander text and show correct text */
-        [data-testid="stExpander"] summary span {
+        /* AGGRESSIVE FIX: Hide ALL original expander text content */
+        [data-testid="stExpander"] summary * {
             font-size: 0 !important;
+            display: none !important;
         }
         
-        [data-testid="stExpander"] summary span::before {
+        /* Show ONLY our custom text via ::before on summary */
+        [data-testid="stExpander"] summary {
+            display: flex !important;
+            align-items: center !important;
+        }
+        
+        [data-testid="stExpander"] summary::before {
             content: "📊 View Detailed Scores" !important;
             font-size: 0.95rem !important;
             color: #1a1a1a !important;
             font-weight: 600 !important;
+            display: block !important;
         }
         
-        /* Hide the markdown container with garbled key text */
-        [data-testid="stExpander"] summary div[data-testid="stMarkdownContainer"] {
-            display: none !important;
+        /* Show the arrow icon */
+        [data-testid="stExpander"] summary svg {
+            display: block !important;
+            margin-left: auto !important;
+            width: 20px !important;
+            height: 20px !important;
         }
         
         /* Streamlit expander details element */
