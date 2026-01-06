@@ -994,6 +994,23 @@ def show_main_app():
             font-size: 0.95rem !important;
         }
         
+        /* Hide garbled expander text and show correct text */
+        [data-testid="stExpander"] summary span {
+            font-size: 0 !important;
+        }
+        
+        [data-testid="stExpander"] summary span::before {
+            content: "📊 View Detailed Scores" !important;
+            font-size: 0.95rem !important;
+            color: #1a1a1a !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Hide the markdown container with garbled key text */
+        [data-testid="stExpander"] summary div[data-testid="stMarkdownContainer"] {
+            display: none !important;
+        }
+        
         /* Streamlit expander details element */
         details summary {
             background-color: #f8f9fa !important;
@@ -2026,6 +2043,7 @@ def show_main_app():
                             )
                         
                         # Expander for detailed breakdown - INSIDE the card
+                        # Using simple text to avoid rendering issues in deployment
                         with st.expander("📊 View Detailed Scores", expanded=False):
                             for cat, score in ev.get("category_scores", {}).items():
                                 col_cat, col_score_detail = st.columns([3, 1])
