@@ -559,32 +559,14 @@ def show_landing_page():
     """, unsafe_allow_html=True)
 
 def show_auth_page():
-    """Display unified auth page with Login/Signup tabs"""
+    """Display separate signin and signup pages"""
     
-    # Initialize auth tab state based on current page
-    # Only set if not already set or if page changed
-    if "auth_tab" not in st.session_state:
-        if st.session_state.get("page") == "signin":
-            st.session_state.auth_tab = "login"
-        elif st.session_state.get("page") == "signup":
-            st.session_state.auth_tab = "signup"
-        else:
-            st.session_state.auth_tab = "login"
-    else:
-        # Sync with page only if page explicitly changed
-        if st.session_state.get("page") == "signin" and st.session_state.auth_tab == "signup":
-            # User navigated to signin page, switch to login
-            st.session_state.auth_tab = "login"
-        elif st.session_state.get("page") == "signup" and st.session_state.auth_tab == "login":
-            # User navigated to signup page, switch to signup
-            st.session_state.auth_tab = "signup"
-    
-    # Apply purple gradient background and styling
+    # Apply mild gradient background and styling
     st.markdown("""
     <style>
-        /* Purple gradient background */
+        /* Mild gradient background */
         .stApp {
-            background: linear-gradient(180deg, #e8dff5 0%, #d4c4e8 100%) !important;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%) !important;
             min-height: 100vh;
         }
         
@@ -676,28 +658,33 @@ def show_auth_page():
             padding: 0 !important;
         }
         
-        
-        /* Tab button styling - ensure colors change properly */
-        div[data-testid="column"] .stButton > button {
+        /* Button styling */
+        .stButton > button {
             border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 0.6rem 1.2rem !important;
+            font-size: 0.9rem !important;
             transition: all 0.2s ease !important;
         }
         
-        /* Primary tab button (active) */
-        div[data-testid="column"] .stButton > button[kind="primary"] {
+        .stButton > button[kind="primary"] {
             background: #3b82f6 !important;
-            color: white !important;
             border: none !important;
         }
         
-        /* Secondary tab button (inactive) */
-        div[data-testid="column"] .stButton > button[kind="secondary"] {
+        .stButton > button[kind="primary"]:hover {
+            background: #2563eb !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        .stButton > button[kind="secondary"] {
             background: white !important;
-            color: #1a1a1a !important;
+            color: #666 !important;
             border: 1.5px solid #e5e7eb !important;
         }
         
-        div[data-testid="column"] .stButton > button[kind="secondary"]:hover {
+        .stButton > button[kind="secondary"]:hover {
             border-color: #3b82f6 !important;
             color: #3b82f6 !important;
         }
@@ -711,44 +698,20 @@ def show_auth_page():
         # Lock icon
         st.markdown("""
         <div style="text-align: center; margin-bottom: 1rem;">
-            <div style="width: 55px; height: 55px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            <div style="width: 55px; height: 55px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
                         border-radius: 14px; display: inline-flex; align-items: center; justify-content: center;">
                 <span style="font-size: 1.5rem; color: white;">🔒</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Welcome title - dynamic based on tab
-        if st.session_state.auth_tab == "login":
+        # ============ SIGNIN PAGE ============
+        if st.session_state.page == "signin":
             st.markdown("""
             <h2 style="font-size: 1.6rem; font-weight: 700; color: #1a1a1a; text-align: center; margin-bottom: 0.3rem;">Welcome Back</h2>
             <p style="color: #666; text-align: center; font-size: 0.9rem; margin-bottom: 1.2rem;">Please enter your details to sign in.</p>
             """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <h2 style="font-size: 1.6rem; font-weight: 700; color: #1a1a1a; text-align: center; margin-bottom: 0.3rem;">Create Account</h2>
-            <p style="color: #666; text-align: center; font-size: 0.9rem; margin-bottom: 1.2rem;">Please enter your details to sign up.</p>
-            """, unsafe_allow_html=True)
-        
-        # Tab toggle buttons
-        tab_col1, tab_col2 = st.columns(2)
-        with tab_col1:
-            login_type = "primary" if st.session_state.auth_tab == "login" else "secondary"
-            login_clicked = st.button("Login", key="tab_login", type=login_type, use_container_width=True)
-        with tab_col2:
-            signup_type = "primary" if st.session_state.auth_tab == "signup" else "secondary"
-            signup_clicked = st.button("Signup", key="tab_signup", type=signup_type, use_container_width=True)
-        
-        # Handle tab switching - let Streamlit naturally rerun
-        if login_clicked and st.session_state.auth_tab != "login":
-            st.session_state.auth_tab = "login"
-        if signup_clicked and st.session_state.auth_tab != "signup":
-            st.session_state.auth_tab = "signup"
-        
-        st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
-        
-        # ============ LOGIN FORM ============
-        if st.session_state.auth_tab == "login":
+            
             # Initialize session state for login fields
             if "login_email" not in st.session_state:
                 st.session_state.login_email = ""
@@ -786,8 +749,13 @@ def show_auth_page():
                     else:
                         st.error(result["message"])
         
-        # ============ SIGNUP FORM ============
-        else:
+        # ============ SIGNUP PAGE ============
+        elif st.session_state.page == "signup":
+            st.markdown("""
+            <h2 style="font-size: 1.6rem; font-weight: 700; color: #1a1a1a; text-align: center; margin-bottom: 0.3rem;">Create Account</h2>
+            <p style="color: #666; text-align: center; font-size: 0.9rem; margin-bottom: 1.2rem;">Please enter your details to sign up.</p>
+            """, unsafe_allow_html=True)
+            
             with st.form("signup_form", clear_on_submit=False):
                 st.markdown('<p style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.3rem;">Full Name</p>', unsafe_allow_html=True)
                 full_name = st.text_input("full_name_signup", placeholder="John Doe", label_visibility="collapsed")
@@ -818,7 +786,6 @@ def show_auth_page():
                         result = create_user(full_name, email, password, "Novintix")
                         if result["success"]:
                             st.success("Account created successfully! Please login.")
-                            st.session_state.auth_tab = "login"
                             st.session_state.page = "signin"
                         else:
                             st.error(result["message"])
