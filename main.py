@@ -1169,8 +1169,7 @@ def show_main_app():
         st.session_state.selected_job_id = None
     if "job_view_tab" not in st.session_state:
         st.session_state.job_view_tab = "Overview"
-    if "job_nav_selection" not in st.session_state:
-        st.session_state.job_nav_selection = "📈 Analytics"
+    # Don't initialize job_nav_selection here - let the job details view handle it based on resume count
     
     # ===================================================== 
     # DASHBOARD — LANDING PAGE WITH JOB CARDS
@@ -1337,6 +1336,17 @@ def show_main_app():
             st.error("Job not found")
             st.session_state.selected_job_id = None
             st.rerun()
+        
+        # Check resume count and set default navigation
+        resumes = get_resumes_by_jd(st.session_state.selected_job_id, org_id=org_id)
+        resume_count = len(resumes)
+        
+        # Set default navigation based on resume count
+        if "job_nav_selection" not in st.session_state or st.session_state.job_nav_selection == "📈 Analytics":
+            if resume_count == 0:
+                st.session_state.job_nav_selection = "📤 Upload Resumes"
+            else:
+                st.session_state.job_nav_selection = "📈 Analytics"
         
         # Get current navigation selection
         current_nav = st.session_state.get("job_nav_selection", "📈 Analytics")
@@ -2401,6 +2411,11 @@ def show_main_app():
                                     # Show parsed details in expander
                                     with st.expander("📄 View Parsed Job Details"):
                                         st.json(parsed_jd)
+                                    
+                                    # Navigate to the job (will auto-select Upload Resumes since resume_count=0)
+                                    st.session_state.selected_job_id = jd_id
+                                    st.session_state.page = "Dashboard"
+                                    st.rerun()
                                 
                             except Exception as e:
                                 st.error(f"❌ Error processing job description: {str(e)}")
@@ -2476,6 +2491,11 @@ def show_main_app():
                             }, org_id=org_id)
                             st.success("✅ Job description saved successfully!")
                             st.toast("✅ JD saved successfully!", icon="✅")
+                            
+                            # Navigate to the job (will auto-select Upload Resumes since resume_count=0)
+                            st.session_state.selected_job_id = jd_id
+                            st.session_state.page = "Dashboard"
+                            st.rerun()
     
     # ===================================================== 
     # LAYER 2 — RESUME UPLOAD (JD-SCOPED)
