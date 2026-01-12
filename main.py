@@ -1837,12 +1837,22 @@ def show_main_app():
             if resume_files:
                 st.info(f"📊 **{len(resume_files)} file(s) selected**")
                 
-                if st.button("🚀 Parse & Evaluate All Resumes", type="primary", use_container_width=True):
+                # Initialize processing flag
+                if "is_processing_resumes" not in st.session_state:
+                    st.session_state.is_processing_resumes = False
+                
+                if st.button("🚀 Parse & Evaluate All Resumes", type="primary", use_container_width=True, disabled=st.session_state.is_processing_resumes):
+                    # Set processing flag to disable button
+                    st.session_state.is_processing_resumes = True
+                    
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     
                     processed_count = 0
                     skipped_count = 0
+                    
+                    # Debug: Track what happens
+                    debug_log = []
                     
                     for idx, file in enumerate(resume_files):
                         status_text.markdown(f"**Processing ({idx+1}/{len(resume_files)}):** `{file.name}`")
@@ -1852,13 +1862,18 @@ def show_main_app():
                         file_content = file.read()
                         file_hash = compute_file_hash(file_content)
                         
+                        debug_log.append(f"File: {file.name}, Hash: {file_hash[:16]}...")
+                        
                         # Check if this resume was already uploaded for THIS job
                         duplicate_check = check_resume_duplicate(file_hash, st.session_state.selected_job_id, org_id=org_id)
+                        
+                        debug_log.append(f"Duplicate check: {duplicate_check['is_duplicate']}")
                         
                         if duplicate_check["is_duplicate"]:
                             existing = duplicate_check["existing_resume"]
                             status_text.markdown(f"⚠️ **Skipped ({idx+1}/{len(resume_files)}):** `{file.name}` - Already uploaded as '{existing.get('candidate_name', 'Unknown')}'")
                             skipped_count += 1
+                            debug_log.append(f"Action: SKIPPED")
                         else:
                             # Reset file pointer for text extraction
                             file.seek(0)
@@ -1868,6 +1883,8 @@ def show_main_app():
                             parsed_resume = parse_resume(raw_text)
                             resume_id = str(uuid.uuid4())
                             candidate_name = parsed_resume.get("candidate_name", "Unknown")
+                            
+                            debug_log.append(f"Action: PROCESSING - Candidate: {candidate_name}")
                             
                             # Save resume
                             save_resume({
@@ -1899,22 +1916,34 @@ def show_main_app():
                             }, org_id=org_id)
                             
                             processed_count += 1
+                            debug_log.append(f"Action: SAVED")
                         
                         progress_bar.progress((idx + 1) / len(resume_files))
                     
                     status_text.empty()
                     progress_bar.empty()
                     
+                    # Debug output
+                    st.write(f"**Debug:** Total files: {len(resume_files)}, Processed: {processed_count}, Skipped: {skipped_count}")
+                    with st.expander("🔍 Debug Log"):
+                        for log in debug_log:
+                            st.write(log)
+                    
                     if processed_count > 0:
                         st.success(f"✅ Successfully processed {processed_count} resume(s)!")
                         st.toast(f"✅ {processed_count} candidate(s) evaluated!", icon="🎉")
+                        st.balloons()
                     
                     if skipped_count > 0:
                         st.warning(f"⚠️ Skipped {skipped_count} duplicate resume(s)")
                     
-                    # Refresh to show new candidates
+                    # Reset processing flag
+                    st.session_state.is_processing_resumes = False
+                    
+                    # Redirect to Analytics after successful processing
                     if processed_count > 0:
-                        st.balloons()
+                        st.session_state.job_nav_selection = "📈 Analytics"
+                        st.rerun()
         
         elif current_nav == "👥 Candidates":
             # CANDIDATES VIEW - SHOW CANDIDATE LIST
